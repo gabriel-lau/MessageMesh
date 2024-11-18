@@ -24,7 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const service = "manishmeganathan/peerchat"
+const service = "messagemesh"
 
 // A structure that represents a P2P Host
 type P2P struct {
