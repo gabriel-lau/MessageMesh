@@ -18,9 +18,9 @@ function greet(): void {
 }</script>
 
 <main>
-  <div class="main-wrapper dark">
+  <div class="container flex">
     <NavigationRail></NavigationRail>
-    <div class="d-inline-flex" style="width: 100%;">
+    <div class="flex flex-row">
       <ChatListComponent bind:isChatOpen={isChatOpen}></ChatListComponent>
       <ChatComponent bind:isChatOpen={isChatOpen}></ChatComponent>  
     </div>
@@ -35,11 +35,5 @@ function greet(): void {
 
 
 <style>
-  @import './css/dark.css';
 
-  .main-wrapper {
-    display: flex;
-    height: 100vh;
-    /* background-color: var(--md-sys-color-surface-container-lowest); */
-  }
 </style>
