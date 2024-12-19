@@ -1,5 +1,8 @@
 <script>
-    let { isChatOpen = $bindable() } = $props()
+	export let isChatOpen;
+    import '@material/web/textfield/outlined-text-field';
+    import '@material/web/iconbutton/filled-icon-button';
+
     let name = $state('');
 
     function sendMessage() {
@@ -17,8 +20,9 @@
         </div>
         <div class="bottombar">
             <div class="bottombar-wrapper d-flex flex-row align-content-center align-items-center">
-                <md-outlined-text-field class="send-field m-3" placeholder="Send">
+                <md-outlined-text-field bind:value={name} class="send-field m-3" placeholder="Send">
                 </md-outlined-text-field>
+                <input bind:name={name}>
                 <md-filled-icon-button onclick="{sendMessage}" aria-label="Copy" class="m-3">
                     <md-icon class="material-icons">send</md-icon>
                 </md-filled-icon-button>
