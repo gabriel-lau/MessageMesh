@@ -5,7 +5,7 @@
 
 <div class="flex-none h-screen">
   <Listgroup active class="h-full w-96">
-    <h3 class="p-1 text-center text-xl font-medium text-gray-900 dark:text-white">User list</h3>
+    <h3 class="p-1 text-center text-xl font-medium text-gray-900 dark:text-white">Chats</h3>
     <ListgroupItem class="text-base font-semibold gap-2">
       <div class="flex items-center place-content-between w-full">
         <div class="flex-1 min-w-0">

@@ -1,15 +1,32 @@
 <script lang="ts">
-  import { Sidebar, SidebarGroup, SidebarItem, SidebarWrapper, Indicator, Button, Modal, DarkMode, Listgroup, ListgroupItem } from 'flowbite-svelte';
+  import {
+    Sidebar,
+    SidebarGroup,
+    SidebarItem,
+    SidebarWrapper,
+    Indicator,
+    Button,
+    Modal,
+    DarkMode,
+    Listgroup,
+    ListgroupItem,
+    Input,
+    Label,
+    Helper,
+    ButtonGroup,
+    InputAddon
+  } from 'flowbite-svelte';
   import {
     PlusOutline,
     DrawSquareOutline,
     AdjustmentsVerticalOutline,
-    CheckCircleSolid,
     ArrowRightToBracketOutline,
-    DownloadOutline
+    DownloadOutline,
+    UserCircleSolid
   } from 'flowbite-svelte-icons';
   let spanClass = 'text-xs text-center';
   let newChatModal = false;
+  let status = 'green';
   let settingsModal = false;
   let settingsToast = false;
 </script>
@@ -57,21 +74,31 @@
       <ListgroupItem>
         <a href="#" class="flex items-center gap-2">
           <DownloadOutline class="w-5 h-5" />
-          <span>Download</span>
+          <span>Download Keys</span>
         </a>
       </ListgroupItem>
     </Listgroup>
-    <DarkMode />
 
     <svelte:fragment slot="footer">
-      <Button color="alternative">Close</Button>
+      <div class="flex justify-between">
+        <Button color="alternative">Close</Button>
+        <DarkMode />
+      </div>
     </svelte:fragment>
   </Modal>
-  <Modal title="New Chat" bind:open={newChatModal} autoclose>
-    <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-      The European Union’s General Data Protection Regulation (G.D.P.R.) goes into effect on May 25 and is meant to ensure a common set of data rights in the
-      European Union. It requires organizations to notify users as soon as possible of high-risk data breaches that could personally affect them.
-    </p>
+  <Modal title="New Chat" size="sm" bind:open={newChatModal} autoclose>
+    <div class="mb-6">
+      <ButtonGroup class="w-full">
+        <InputAddon>
+          <UserCircleSolid class="w-4 h-4 text-gray-500 dark:text-gray-400" />
+        </InputAddon>
+        <Input color={status} id="website-admin" placeholder="Enter account username" />
+      </ButtonGroup>
+      <Helper class="mt-2" color={status}>
+        <span class="font-medium">Well done!</span>
+        Some success message.
+      </Helper>
+    </div>
     <svelte:fragment slot="footer">
       <Button on:click={() => alert('Handle "success"')}>Save</Button>
       <Button color="alternative">Cancel</Button>

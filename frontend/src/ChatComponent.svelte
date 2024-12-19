@@ -14,7 +14,7 @@
 <div class="flex flex-col h-full flex-auto">
   <div class="flex-none">
     <Navbar>
-      <NavBrand href="/">
+      <NavBrand href="#">
         <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Flowbite</span>
       </NavBrand>
       <NavHamburger />
@@ -107,7 +107,7 @@
   <div class="flex-none">
     <label for="chat" class="sr-only">Your message</label>
     <div class="flex items-center px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-      <Textarea bind:value={message} id="chat" class="mx-4 bg-white dark:bg-gray-800" rows="1" placeholder="Your message..." />
+      <Textarea bind:value={message} id="chat" class="mx-4 bg-white dark:bg-gray-800 min-h-10 max-h-20" placeholder="Your message..." />
       <ToolbarButton onclick={sendMessage} color="blue" class="rounded-full text-primary-600 dark:text-primary-500">
         <PaperPlaneOutline class="w-6 h-6 rotate-45" />
         <span class="sr-only">Send message</span>
