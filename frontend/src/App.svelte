@@ -1,28 +1,28 @@
 <script lang="ts">
-import "./app.css";
-import logo from './assets/images/logo-universal.png'
-import {Greet} from '../wailsjs/go/main/App.js'
-import NavigationRail from './NavigationRailComponent.svelte';
-import ChatListComponent from './ChatListComponent.svelte';
-import ChatComponent from './ChatComponent.svelte';
+  import './app.css';
+  import logo from './assets/images/logo-universal.png';
+  import { Greet } from '../wailsjs/go/main/App.js';
+  import NavigationRail from './NavigationRailComponent.svelte';
+  import ChatListComponent from './ChatListComponent.svelte';
+  import ChatComponent from './ChatComponent.svelte';
 
-let name2 = $state('');
+  let name2 = $state('');
 
-let resultText: string = "Please enter your name below 👇"
-let name: string
-let isChatOpen= true;
+  let resultText: string = 'Please enter your name below 👇';
+  let name: string;
+  let isChatOpen = true;
 
-
-function greet(): void {
-  Greet(name).then(result => resultText = result)
-}</script>
+  function greet(): void {
+    Greet(name).then((result) => (resultText = result));
+  }
+</script>
 
 <main>
-  <div class="container flex">
+  <div class="flex w-screen h-screen">
     <NavigationRail></NavigationRail>
-    <div class="flex flex-row">
-      <ChatListComponent bind:isChatOpen={isChatOpen}></ChatListComponent>
-      <ChatComponent bind:isChatOpen={isChatOpen}></ChatComponent>  
+    <div class="flex flex-row w-full">
+      <ChatListComponent bind:isChatOpen></ChatListComponent>
+      <ChatComponent bind:isChatOpen></ChatComponent>
     </div>
   </div>
   <!-- <img alt="Wails logo" id="logo" src="{logo}"> -->
@@ -33,7 +33,5 @@ function greet(): void {
   </div> -->
 </main>
 
-
 <style>
-
 </style>
