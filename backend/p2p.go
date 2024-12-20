@@ -318,6 +318,7 @@ func bootstrapDHT(ctx context.Context, nodehost host.Host, kaddht *dht.IpfsDHT) 
 // A function that connects the given host to all peers recieved from a
 // channel of peer address information. Meant to be started as a go routine.
 func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
+	fmt.Println(purple+"[p2p.go]"+reset+" Number of Peers Discovered: ", len(peerchan))
 	// Iterate over the peer channel
 	for peer := range peerchan {
 		// Ignore if the discovered peer is the host itself
