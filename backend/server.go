@@ -12,7 +12,7 @@ type Network struct {
 	chatRoom *ChatRoom
 }
 
-func ConnectToNetwork() {
+func (network *Network) ConnectToNetwork() {
 	// Define input flags
 	username := "newuser"
 	chatroom := "messagemesh"
@@ -26,17 +26,17 @@ func ConnectToNetwork() {
 	fmt.Println()
 
 	// Create a new P2PHost
-	p2phost := NewP2P()
+	network.p2p = NewP2P()
 	logrus.Infoln("Completed P2P Setup")
 
 	// Connect to peers with the chosen discovery method
-	p2phost.AdvertiseConnect()
+	network.p2p.AdvertiseConnect()
 
 	logrus.Infoln("Connected to Service Peers")
 
 	// Join the chat room
-	chatapp, _ := JoinChatRoom(p2phost, username, chatroom)
-	logrus.Infof("Joined the '%s' chatroom as '%s'", chatapp.RoomName, chatapp.UserName)
+	network.chatRoom, _ = JoinChatRoom(network.p2p, username, chatroom)
+	logrus.Infof("Joined the '%s' chatroom as '%s'", network.chatRoom.RoomName, network.chatRoom.UserName)
 
 	// Wait for network setup to complete
 	time.Sleep(time.Second * 5)
@@ -44,10 +44,10 @@ func ConnectToNetwork() {
 	logrus.Infoln("Connected to Service Peers")
 
 	// Print my peer ID
-	logrus.Infof("My Peer ID: %s", chatapp.SelfID())
+	logrus.Infof("My Peer ID: %s", network.chatRoom.SelfID())
 
 	// Print my multiaddress
-	logrus.Infof("My Multiaddress: %s", p2phost.AllNodeAddr())
+	logrus.Infof("My Multiaddress: %s", network.p2p.AllNodeAddr())
 
 	// List of peers in the whole network
 	// logrus.Infof("Connected to %s peers in the network", p2phost.Host.Peerstore().Peers())
@@ -57,7 +57,7 @@ func ConnectToNetwork() {
 
 	// Keep the main thread alive and check for new peers
 	// networkPeerListCount := -1
-	starteventhandler(chatapp)
+	starteventhandler(network.chatRoom)
 
 	// channel <- &Network{
 	// 	p2p:      p2phost,
@@ -119,4 +119,8 @@ func starteventhandler(cr *ChatRoom) {
 			// 	return
 		}
 	}
+}
+
+func (network *Network) SendMessage(message string) {
+	network.chatRoom.Outbound <- message
 }

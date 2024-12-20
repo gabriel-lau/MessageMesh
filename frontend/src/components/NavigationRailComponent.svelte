@@ -11,7 +11,6 @@
     Listgroup,
     ListgroupItem,
     Input,
-    Label,
     Helper,
     ButtonGroup,
     InputAddon
@@ -33,7 +32,7 @@
 
 <div class="h-screen">
   <Sidebar class="w-auto h-full">
-    <SidebarWrapper class="h-full">
+    <SidebarWrapper class="h-full rounded-none">
       <SidebarGroup>
         <SidebarItem class="flex flex-col" {spanClass} on:click={() => (newChatModal = true)} href="#">
           <svelte:fragment slot="icon">

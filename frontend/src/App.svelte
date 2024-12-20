@@ -2,9 +2,9 @@
   import './app.css';
   import logo from './assets/images/logo-universal.png';
   import { Greet } from '../wailsjs/go/main/App.js';
-  import NavigationRail from './NavigationRailComponent.svelte';
-  import ChatListComponent from './ChatListComponent.svelte';
-  import ChatComponent from './ChatComponent.svelte';
+  import NavigationRailComponent from './components/NavigationRailComponent.svelte';
+  import ChatListComponent from './components/ChatListComponent.svelte';
+  import ChatComponent from './components/ChatComponent.svelte';
 
   let name2 = $state('');
 
@@ -18,8 +18,8 @@
 </script>
 
 <main>
-  <div class="flex w-screen h-screen">
-    <NavigationRail></NavigationRail>
+  <div class="flex w-screen h-screen bg-primary-50 dark:bg-gray-900">
+    <NavigationRailComponent></NavigationRailComponent>
     <div class="flex flex-row w-full">
       <ChatListComponent bind:isChatOpen></ChatListComponent>
       <ChatComponent bind:isChatOpen></ChatComponent>

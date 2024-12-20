@@ -21,10 +21,15 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	backend.ConnectToNetwork()
+	a.network.ConnectToNetwork()
+	// backend.ConnectToNetwork()
 }
 
 // Greet returns a greeting for the given name
 func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
+}
+
+func (a *App) SendMessage(message string) {
+	a.network.SendMessage(message)
 }
