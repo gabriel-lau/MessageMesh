@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 
 	"github.com/wailsapp/wails/v2"
@@ -10,9 +11,18 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
+var headless = false
 
 func main() {
-	// go connectToP2P()
+	if headless {
+		app := NewApp()
+		ctx := context.Background()
+		app.startup(ctx)
+
+		for {
+			app.SendMessage("Hello")
+		}
+	}
 
 	// Create an instance of the app structure
 	app := NewApp()

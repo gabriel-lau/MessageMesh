@@ -57,7 +57,7 @@ func (network *Network) ConnectToNetwork() {
 
 	// Keep the main thread alive and check for new peers
 	// networkPeerListCount := -1
-	starteventhandler(network.chatRoom)
+	go network.starteventhandler()
 
 	// channel <- &Network{
 	// 	p2p:      p2phost,
@@ -85,11 +85,19 @@ func (network *Network) ConnectToNetwork() {
 	// }
 }
 
-func starteventhandler(cr *ChatRoom) {
+func (network *Network) starteventhandler() {
 	refreshticker := time.NewTicker(time.Second)
 	defer refreshticker.Stop()
 
+	chatRoomPeerListCount := -1
 	for {
+		if len(network.chatRoom.PeerList()) != chatRoomPeerListCount {
+			logrus.Infof("Connected to %d peers in the chatroom", len(network.chatRoom.PeerList()))
+			for _, p := range network.chatRoom.PeerList() {
+				logrus.Infof("Peer ID: %s", p.String())
+			}
+			chatRoomPeerListCount = len(network.chatRoom.PeerList())
+		}
 		select {
 
 		// case msg := <-cr.MsgInputs:
@@ -102,11 +110,11 @@ func starteventhandler(cr *ChatRoom) {
 		// 	// Handle the recieved command
 		// 	go cr.handlecommand(cmd)
 
-		case msg := <-cr.Inbound:
+		case msg := <-network.chatRoom.Inbound:
 			// Print the recieved messages to the message box
 			logrus.Infof("Message: %s", msg.Message)
 
-		case log := <-cr.Logs:
+		case log := <-network.chatRoom.Logs:
 			// Add the log to the message box
 			logrus.Infof("Log: %s", log)
 
