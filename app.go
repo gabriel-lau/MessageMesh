@@ -22,7 +22,7 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.network.ConnectToNetwork()
-	// backend.ConnectToNetwork()
+	// runtime.EventsEmit(a.ctx, "emitMyEvent", a.network.ChatRoom.pstopic.ListPeers())
 }
 
 // Greet returns a greeting for the given name
