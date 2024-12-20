@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -63,15 +64,19 @@ func JoinChatRoom(p2phost *P2P, username string, roomname string) (*ChatRoom, er
 	topic, err := p2phost.PubSub.Join(roomname)
 	// Check the error
 	if err != nil {
+		fmt.Println(pink + "[chat.go]" + reset + "Could not join the chat room")
 		return nil, err
 	}
+	fmt.Println(pink + "[chat.go]" + reset + "Joined the chat room")
 
 	// Subscribe to the PubSub topic
 	sub, err := topic.Subscribe()
 	// Check the error
 	if err != nil {
+		fmt.Println(pink + "[chat.go]" + reset + "Could not subscribe to the chat room")
 		return nil, err
 	}
+	fmt.Println(pink + "[chat.go]" + reset + "Subscribed to the chat room")
 
 	// Check the provided username
 	if username == "" {
@@ -108,8 +113,11 @@ func JoinChatRoom(p2phost *P2P, username string, roomname string) (*ChatRoom, er
 
 	// Start the subscribe loop
 	go chatroom.SubLoop()
+	fmt.Println(pink + "[chat.go]" + reset + "SubLoop started")
+
 	// Start the publish loop
 	go chatroom.PubLoop()
+	fmt.Println(pink + "[chat.go]" + reset + "PubLoop started")
 
 	// Return the chatroom
 	return chatroom, nil
@@ -135,15 +143,19 @@ func (cr *ChatRoom) PubLoop() {
 			messagebytes, err := json.Marshal(m)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not marshal JSON"}
+				fmt.Println(pink + "[chat.go]" + reset + "Could not marshal JSON")
 				continue
 			}
+			fmt.Println(pink + "[chat.go]" + reset + "Message marshalled")
 
 			// Publish the message to the topic
 			err = cr.pstopic.Publish(cr.psctx, messagebytes)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not publish to topic"}
+				fmt.Println(pink + "[chat.go]" + reset + "Could not publish to topic")
 				continue
 			}
+			fmt.Println(pink + "[chat.go]" + reset + "Message published")
 		}
 	}
 }
@@ -166,8 +178,10 @@ func (cr *ChatRoom) SubLoop() {
 				// Close the messages queue (subscription has closed)
 				close(cr.Inbound)
 				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "subscription has closed"}
+				fmt.Println(pink + "[chat.go]" + reset + "Subscription has closed")
 				return
 			}
+			fmt.Println(pink + "[chat.go]" + reset + "Message recieved")
 
 			// Check if message is from self
 			if message.ReceivedFrom == cr.selfid {
@@ -180,8 +194,10 @@ func (cr *ChatRoom) SubLoop() {
 			err = json.Unmarshal(message.Data, cm)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "could not unmarshal JSON"}
+				fmt.Println(pink + "[chat.go]" + reset + "Could not unmarshal JSON")
 				continue
 			}
+			fmt.Println(pink + "[chat.go]" + reset + "Message unmarshalled")
 
 			// Send the ChatMessage into the message queue
 			cr.Inbound <- *cm

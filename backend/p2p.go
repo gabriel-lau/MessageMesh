@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"sync"
 	"time"
 
@@ -21,10 +22,11 @@ import (
 	"github.com/mr-tron/base58/base58"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multihash"
-	"github.com/sirupsen/logrus"
 )
 
-const service = "messagemesh"
+const (
+	service = "messagemesh"
+)
 
 // A structure that represents a P2P Host
 type P2P struct {
@@ -61,22 +63,22 @@ func NewP2P() *P2P {
 	// Setup a P2P Host Node
 	nodehost, kaddht := setupHost(ctx)
 	// Debug log
-	logrus.Debugln("Created the P2P Host and the Kademlia DHT.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Created the P2P Host and the Kademlia DHT.")
 
 	// Bootstrap the Kad DHT
 	bootstrapDHT(ctx, nodehost, kaddht)
 	// Debug log
-	logrus.Debugln("Bootstrapped the Kademlia DHT and Connected to Bootstrap Peers")
+	fmt.Println(purple + "[p2p.go]" + reset + " Bootstrapped the Kademlia DHT and Connected to Bootstrap Peers")
 
 	// Create a peer discovery service using the Kad DHT
 	routingdiscovery := discoveryRouting.NewRoutingDiscovery(kaddht)
 	// Debug log
-	logrus.Debugln("Created the Peer Discovery Service.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Created the Peer Discovery Service.")
 
 	// Create a PubSub handler with the routing discovery
 	pubsubhandler := setupPubSub(ctx, nodehost, routingdiscovery)
 	// Debug log
-	logrus.Debugln("Created the PubSub Handler.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Created the PubSub Handler.")
 
 	// Return the P2P object
 	return &P2P{
@@ -97,27 +99,25 @@ func (p2p *P2P) AdvertiseConnect() {
 	// Advertise the availabilty of the service on this node
 	ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
 	// Debug log
-	logrus.Debugln("Advertised the PeerChat Service.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Advertised the PeerChat Service.")
 	// Sleep to give time for the advertisment to propogate
 	time.Sleep(time.Second * 5)
 	// Debug log
-	logrus.Debugf("Service Time-to-Live is %s", ttl)
+	fmt.Printf(purple+"[p2p.go]"+reset+" Service Time-to-Live is %s\n", ttl)
 
 	// Find all peers advertising the same service
 	peerchan, err := p2p.Discovery.FindPeers(p2p.Ctx, service)
 	// Handle any potential error
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("P2P Peer Discovery Failed!")
+		fmt.Println(purple + "[p2p.go]" + reset + " P2P Peer Discovery Failed! " + err.Error())
 	}
 	// Trace log
-	logrus.Traceln("Discovered PeerChat Service Peers.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Discovered PeerChat Service Peers.")
 
 	// Connect to peers as they are discovered
 	go handlePeerDiscovery(p2p.Host, peerchan)
 	// Trace log
-	logrus.Traceln("Started Peer Connection Handler.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Started Peer Connection Handler.")
 }
 
 // A method of P2P to connect to service peers.
@@ -129,29 +129,27 @@ func (p2p *P2P) AnnounceConnect() {
 	// Generate the Service CID
 	cidvalue := generateCID(service)
 	// Trace log
-	logrus.Traceln("Generated the Service CID.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Generated the Service CID.")
 
 	// Announce that this host can provide the service CID
 	err := p2p.KadDHT.Provide(p2p.Ctx, cidvalue, true)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("Failed to Announce Service CID!")
+		fmt.Println(purple + "[p2p.go]" + reset + " Failed to Announce Service CID! " + err.Error())
 	}
 	// Debug log
-	logrus.Debugln("Announced the PeerChat Service.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Announced the PeerChat Service.")
 	// Sleep to give time for the advertisment to propogate
 	time.Sleep(time.Second * 5)
 
 	// Find the other providers for the service CID
 	peerchan := p2p.KadDHT.FindProvidersAsync(p2p.Ctx, cidvalue, 0)
 	// Trace log
-	logrus.Traceln("Discovered PeerChat Service Peers.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Discovered PeerChat Service Peers.")
 
 	// Connect to peers as they are discovered
 	go handlePeerDiscovery(p2p.Host, peerchan)
 	// Debug log
-	logrus.Debugln("Started Peer Connection Handler.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Started Peer Connection Handler.")
 }
 
 // A function that generates the p2p configuration options and creates a
@@ -162,13 +160,11 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	identity := libp2p.Identity(prvkey)
 	// Handle any potential error
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("Failed to Generate P2P Identity Configuration!")
+		fmt.Println(purple + "[p2p.go]" + reset + " Failed to Generate P2P Identity Configuration! " + err.Error())
 	}
 
 	// Trace log
-	logrus.Traceln("Generated P2P Identity Configuration.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Generated P2P Identity Configuration.")
 
 	// // Set up TLS secured TCP transport and options
 	// security := libp2p.Security(tls.ID, tls.New)
@@ -188,13 +184,11 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	listen := libp2p.ListenAddrs(muladdr)
 	// Handle any potential error
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("Failed to Generate P2P Address Listener Configuration!")
+		fmt.Println(purple + "[p2p.go]" + reset + " Failed to Generate P2P Address Listener Configuration! " + err.Error())
 	}
 
 	// Trace log
-	logrus.Traceln("Generated P2P Address Listener Configuration.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Generated P2P Address Listener Configuration.")
 
 	// Set up the stream multiplexer and connection manager options
 	muxer := libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport)
@@ -202,14 +196,14 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	conn := libp2p.ConnectionManager(connmgr)
 
 	// Trace log
-	logrus.Traceln("Generated P2P Stream Multiplexer, Connection Manager Configurations.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Generated P2P Stream Multiplexer, Connection Manager Configurations.")
 
 	// Setup NAT traversal and relay options
 	nat := libp2p.NATPortMap()
 	relay := libp2p.EnableAutoNATv2()
 
 	// Trace log
-	logrus.Traceln("Generated P2P NAT Traversal and Relay Configurations.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Generated P2P NAT Traversal and Relay Configurations.")
 
 	// Declare a KadDHT
 	var kaddht *dht.IpfsDHT
@@ -220,7 +214,7 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	})
 
 	// Trace log
-	logrus.Traceln("Generated P2P Routing Configurations.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Generated P2P Routing Configurations.")
 
 	// opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, relay)
 	opts := libp2p.ChainOptions(identity, listen, muxer, conn, nat, routing, relay)
@@ -229,9 +223,7 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	libhost, err := libp2p.New(opts)
 	// Handle any potential error
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("Failed to Create the P2P Host!")
+		fmt.Println(purple + "[p2p.go]" + reset + " Failed to Create the P2P Host! " + err.Error())
 	}
 
 	// Return the created host and the kademlia DHT
@@ -248,15 +240,13 @@ func setupKadDHT(ctx context.Context, nodehost host.Host) *dht.IpfsDHT {
 	dhtpeers := dht.BootstrapPeers(bootstrappeers...)
 
 	// Trace log
-	logrus.Traceln("Generated DHT Configuration.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Generated DHT Configuration.")
 
 	// Start a Kademlia DHT on the host in server mode
 	kaddht, err := dht.New(ctx, nodehost, dhtmode, dhtpeers)
 	// Handle any potential error
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("Failed to Create the Kademlia DHT!")
+		fmt.Println(purple + "[p2p.go]" + reset + " Failed to Create the Kademlia DHT! " + err.Error())
 	}
 
 	// Return the KadDHT
@@ -270,10 +260,7 @@ func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *disc
 	pubsubhandler, err := pubsub.NewGossipSub(ctx, nodehost, pubsub.WithDiscovery(routingdiscovery))
 	// Handle any potential error
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-			"type":  "GossipSub",
-		}).Fatalln("PubSub Handler Creation Failed!")
+		fmt.Println(purple + "[p2p.go]" + reset + " PubSub Handler Creation Failed! " + err.Error())
 	}
 
 	// Return the PubSub handler
@@ -285,13 +272,11 @@ func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *disc
 func bootstrapDHT(ctx context.Context, nodehost host.Host, kaddht *dht.IpfsDHT) {
 	// Bootstrap the DHT to satisfy the IPFS Router interface
 	if err := kaddht.Bootstrap(ctx); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("Failed to Bootstrap the Kademlia!")
+		fmt.Println(purple + "[p2p.go]" + reset + " Failed to Bootstrap the Kademlia! " + err.Error())
 	}
 
 	// Trace log
-	logrus.Traceln("Set the Kademlia DHT into Bootstrap Mode.")
+	fmt.Println(purple + "[p2p.go]" + reset + " Set the Kademlia DHT into Bootstrap Mode.")
 
 	// Declare a WaitGroup
 	var wg sync.WaitGroup
@@ -327,7 +312,7 @@ func bootstrapDHT(ctx context.Context, nodehost host.Host, kaddht *dht.IpfsDHT) 
 	wg.Wait()
 
 	// Log the number of bootstrap peers connected
-	logrus.Debugf("Connected to %d out of %d Bootstrap Peers.", connectedbootpeers, totalbootpeers)
+	fmt.Printf(purple+"[p2p.go]"+reset+" Connected to %d out of %d Bootstrap Peers.\n", connectedbootpeers, totalbootpeers)
 }
 
 // A function that connects the given host to all peers recieved from a
@@ -360,9 +345,7 @@ func generateCID(namestring string) cid.Cid {
 	// Generate a Multihash from the base58 string
 	mulhash, err := multihash.FromB58String(string(b58string))
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatalln("Failed to Generate Service CID!")
+		fmt.Println(purple + "[p2p.go]" + reset + " Failed to Generate Service CID! " + err.Error())
 	}
 
 	// Generate a CID from the Multihash

@@ -7,6 +7,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	blue   = "\033[34m"
+	reset  = "\033[0m"
+	purple = "\033[35m"
+	pink   = "\033[95m"
+)
+
 type Network struct {
 	p2p      *P2P
 	chatRoom *ChatRoom
@@ -18,36 +25,33 @@ func (network *Network) ConnectToNetwork() {
 	chatroom := "messagemesh"
 	// Parse input flags
 
-	// Set the log level
-	logrus.SetLevel(logrus.InfoLevel)
-
-	fmt.Println("The PeerChat Application is starting.")
-	fmt.Println("This may take upto 30 seconds.")
+	fmt.Println(blue + "[server.go]" + reset + "The PeerChat Application is starting.")
+	fmt.Println(blue + "[server.go]" + reset + "This may take upto 30 seconds.")
 	fmt.Println()
 
 	// Create a new P2PHost
 	network.p2p = NewP2P()
-	logrus.Infoln("Completed P2P Setup")
+	fmt.Println(blue + "[server.go]" + reset + " Completed P2P Setup")
 
 	// Connect to peers with the chosen discovery method
 	network.p2p.AdvertiseConnect()
 
-	logrus.Infoln("Connected to Service Peers")
+	fmt.Println(blue + "[server.go]" + reset + " Connected to Service Peers")
 
 	// Join the chat room
 	network.chatRoom, _ = JoinChatRoom(network.p2p, username, chatroom)
-	logrus.Infof("Joined the '%s' chatroom as '%s'", network.chatRoom.RoomName, network.chatRoom.UserName)
+	fmt.Printf(blue+"[server.go]"+reset+" Joined the '%s' chatroom as '%s'\n", network.chatRoom.RoomName, network.chatRoom.UserName)
 
 	// Wait for network setup to complete
 	time.Sleep(time.Second * 5)
 
-	logrus.Infoln("Connected to Service Peers")
+	fmt.Println(blue + "[server.go]" + reset + " Connected to Service Peers")
 
 	// Print my peer ID
-	logrus.Infof("My Peer ID: %s", network.chatRoom.SelfID())
+	fmt.Printf(blue+"[server.go]"+reset+" My Peer ID: %s\n", network.chatRoom.SelfID())
 
 	// Print my multiaddress
-	logrus.Infof("My Multiaddress: %s", network.p2p.AllNodeAddr())
+	fmt.Printf(blue+"[server.go]"+reset+" My Multiaddress: %s\n", network.p2p.AllNodeAddr())
 
 	// List of peers in the whole network
 	// logrus.Infof("Connected to %s peers in the network", p2phost.Host.Peerstore().Peers())
@@ -79,7 +83,7 @@ func (network *Network) ConnectToNetwork() {
 	// 		}
 	// 		chatRoomPeerListCount = len(chatapp.PeerList())
 	// 	}
-	// 	chatapp.Outbound <- fmt.Sprintf("Hello from %s", chatapp.UserName)
+	// 	chatapp.Outbound <- fmt.SPrintln("Hello from %s", chatapp.UserName)
 	// 	msg := <-chatapp.Inbound
 	// 	logrus.Infof("Message: %s", msg.Message)
 	// }
@@ -92,7 +96,7 @@ func (network *Network) starteventhandler() {
 	chatRoomPeerListCount := -1
 	for {
 		if len(network.chatRoom.PeerList()) != chatRoomPeerListCount {
-			logrus.Infof("Connected to %d peers in the chatroom", len(network.chatRoom.PeerList()))
+			fmt.Printf(blue+"[server.go]"+reset+" Connected to %d peers in the chatroom\n", len(network.chatRoom.PeerList()))
 			for _, p := range network.chatRoom.PeerList() {
 				logrus.Infof("Peer ID: %s", p.String())
 			}
@@ -112,11 +116,11 @@ func (network *Network) starteventhandler() {
 
 		case msg := <-network.chatRoom.Inbound:
 			// Print the recieved messages to the message box
-			logrus.Infof("Message: %s", msg.Message)
+			fmt.Printf(blue+"[server.go]"+reset+" Message: %s\n", msg.Message)
 
 		case log := <-network.chatRoom.Logs:
 			// Add the log to the message box
-			logrus.Infof("Log: %s", log)
+			fmt.Printf(blue+"[server.go]"+reset+" Log: %s\n", log)
 
 			// case <-refreshticker.C:
 			// 	// Refresh the list of peers in the chat room periodically
