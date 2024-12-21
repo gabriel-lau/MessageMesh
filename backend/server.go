@@ -60,7 +60,7 @@ func (network *Network) ConnectToNetwork() {
 func (network *Network) starteventhandler() {
 	refreshticker := time.NewTicker(time.Second)
 	defer refreshticker.Stop()
-
+	network.ChatRoom.Outbound <- "I am " + network.ChatRoom.selfid.String()
 	for {
 		select {
 

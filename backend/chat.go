@@ -182,11 +182,13 @@ func (cr *ChatRoom) SubLoop() {
 				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscription has closed")
 				return
 			}
-			fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message")
 
 			// Check if message is from self
 			if message.ReceivedFrom == cr.selfid {
+				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from self")
 				continue
+			} else {
+				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from other peer")
 			}
 
 			// Declare a ChatMessage
