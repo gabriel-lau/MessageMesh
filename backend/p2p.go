@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	service = "messagemesh"
+	service = "qwTYmRbuZl"
 )
 
 // A structure that represents a P2P Host
@@ -345,6 +345,8 @@ func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 		if peer.ID == nodehost.ID() {
 			continue
 		}
+
+		fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Discovered Peer: %s\n", peer.ID.String())
 
 		// Connect to the peer
 		nodehost.Connect(context.Background(), peer)
