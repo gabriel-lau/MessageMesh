@@ -12,7 +12,6 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.13.0
 	github.com/multiformats/go-multihash v0.2.3
-	github.com/sirupsen/logrus v1.8.1
 	github.com/wailsapp/wails/v2 v2.9.2
 )
 
