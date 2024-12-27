@@ -1,15 +1,17 @@
 package main
 
 import (
-	"MessageMesh/backend"
+	backend "MessageMesh/backend"
+	backendservices "MessageMesh/backend/models"
 	"context"
 	"fmt"
 )
 
 // App struct
 type App struct {
-	ctx     context.Context
-	network backend.Network
+	ctx        context.Context
+	network    backend.Network
+	appService backendservices.AppService
 }
 
 // NewApp creates a new App application struct
@@ -22,7 +24,10 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.network.ConnectToNetwork()
-	// runtime.EventsEmit(a.ctx, "emitMyEvent", a.network.ChatRoom.pstopic.ListPeers())
+}
+
+func (a *App) StartAppService(appService backendservices.AppService) {
+	a.appService = appService
 }
 
 // Greet returns a greeting for the given name

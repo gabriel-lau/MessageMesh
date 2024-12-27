@@ -215,7 +215,8 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 
 	// Setup NAT traversal and relay options
 	nat := libp2p.NATPortMap()
-	relay := libp2p.EnableAutoNATv2()
+
+	autoNat := libp2p.EnableAutoNATv2()
 
 	// Trace log
 
@@ -234,7 +235,7 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Routing Configurations.")
 
 	// opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, relay)
-	opts := libp2p.ChainOptions(identity, listen, muxer, conn, nat, routing, relay)
+	opts := libp2p.ChainOptions(identity, listen, muxer, conn, nat, routing, autoNat)
 
 	// Construct a new libP2P host with the created options
 	libhost, err := libp2p.New(opts)

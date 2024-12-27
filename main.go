@@ -1,6 +1,8 @@
 package main
 
 import (
+	appservices "MessageMesh/backend/models"
+
 	"context"
 	"embed"
 	"fmt"
@@ -28,7 +30,7 @@ func main() {
 		app.startup(ctx)
 
 		for {
-			app.SendMessage("Hello")
+			// app.SendMessage("Hello")
 			time.Sleep(3 * time.Second)
 		}
 	}
@@ -37,6 +39,8 @@ func main() {
 
 	// Create an instance of the app structure
 	app := NewApp()
+	appService := *appservices.NewAppService()
+	app.appService = appService
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -50,6 +54,7 @@ func main() {
 		OnStartup:        app.startup,
 		Bind: []interface{}{
 			app,
+			&appService,
 		},
 	})
 

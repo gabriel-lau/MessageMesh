@@ -26,7 +26,7 @@
   import { EventsOn } from '../../wailsjs/runtime/runtime';
   let spanClass = 'text-xs text-center';
   let newChatModal = false;
-  let status = 'green';
+  let status: 'green' | 'red' | 'disabled' | 'gray' = 'green';
   let settingsModal = false;
   let settingsToast = false;
   // function getOnlinePeers() {

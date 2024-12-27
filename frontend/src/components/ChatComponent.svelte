@@ -3,12 +3,15 @@
   import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
   import { PaperPlaneOutline } from 'flowbite-svelte-icons';
   import { SendMessage } from '../../wailsjs/go/main/App.js';
+  // import { backend } from '../../wailsjs/go/models';
 
   let { isChatOpen = $bindable() } = $props();
   let message = $state('');
+  // let chatService = new backend.ChatService();
 
   function sendMessage(): void {
-    SendMessage(message);
+    // SendMessage(message, chatService);
+    message = '';
   }
 </script>
 
@@ -39,16 +42,19 @@
       </div>
     </div>
     <!-- Chat message 2 (Response) -->
-    <div class="flex w-full justify-end p-3">
-      <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 text-white bg-primary-700 dark:bg-primary-800 rounded-l-xl rounded-br-xl">
-        <div class="flex items-center justify-end space-x-2 rtl:space-x-reverse">
-          <span class="text-sm font-semibold text-white">Bonnie Green</span>
-          <span class="text-sm font-normal text-gray-300">11:46</span>
+
+    {#each chatService.messages as message}
+      <div class="flex w-full justify-end p-3">
+        <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 text-white bg-primary-700 dark:bg-primary-800 rounded-l-xl rounded-br-xl">
+          <div class="flex items-center justify-end space-x-2 rtl:space-x-reverse">
+            <span class="text-sm font-semibold text-white">Bonnie Green</span>
+            <span class="text-sm font-normal text-gray-300">11:46</span>
+          </div>
+          <p class="text-sm font-normal py-2.5 text-white">{message.message}</p>
+          <span class="text-sm font-normal text-end text-gray-300">Delivered</span>
         </div>
-        <p class="text-sm font-normal py-2.5 text-white">That's awesome. I think our users will really appreciate the improvements.</p>
-        <span class="text-sm font-normal text-end text-gray-300">Delivered</span>
       </div>
-    </div>
+    {/each}
   </div>
   <div class="flex-none">
     <label for="chat" class="sr-only">Your message</label>

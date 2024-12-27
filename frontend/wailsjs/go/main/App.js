@@ -9,3 +9,7 @@ export function Greet(arg1) {
 export function SendMessage(arg1) {
   return window['go']['main']['App']['SendMessage'](arg1);
 }
+
+export function StartAppService(arg1) {
+  return window['go']['main']['App']['StartAppService'](arg1);
+}
