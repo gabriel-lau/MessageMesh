@@ -10,11 +10,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-// Represents the default fallback room and user names
-// if they aren't provided when the app is started
-const defaultuser = "newuser"
-const defaultroom = "lobby"
-
 // A structure that represents a PubSub Chat Room
 type ChatRoom struct {
 	// Represents the P2P Host for the ChatRoom
@@ -59,10 +54,10 @@ type chatlog struct {
 
 // A constructor function that generates and returns a new
 // ChatRoom for a given P2PHost, username and roomname
-func JoinChatRoom(p2phost *P2P, username string, roomname string) (*ChatRoom, error) {
+func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 
 	// Create a PubSub topic with the room name
-	topic, err := p2phost.PubSub.Join(roomname)
+	topic, err := p2phost.PubSub.Join("messagemesh")
 	// Check the error
 	if err != nil {
 		fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not join the chat room")
@@ -78,18 +73,6 @@ func JoinChatRoom(p2phost *P2P, username string, roomname string) (*ChatRoom, er
 		return nil, err
 	}
 	fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscribed to the chat room")
-
-	// Check the provided username
-	if username == "" {
-		// Use the default user name
-		username = defaultuser
-	}
-
-	// Check the provided roomname
-	if roomname == "" {
-		// Use the default room name
-		roomname = defaultroom
-	}
 
 	// Create cancellable context
 	pubsubctx, cancel := context.WithCancel(context.Background())
@@ -107,7 +90,7 @@ func JoinChatRoom(p2phost *P2P, username string, roomname string) (*ChatRoom, er
 		pstopic:  topic,
 		psub:     sub,
 
-		RoomName: roomname,
+		RoomName: "messagemesh",
 		UserName: username,
 		selfid:   p2phost.Host.ID(),
 	}

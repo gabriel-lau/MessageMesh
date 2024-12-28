@@ -18,11 +18,6 @@ type Network struct {
 }
 
 func (network *Network) ConnectToNetwork() {
-	// Define input flags
-	username := "newuser"
-	chatroom := "messagemesh"
-	// Parse input flags
-
 	fmt.Println(blue + "[server.go]" + "[" + time.Now().Format("15:04:05") + "]" + reset + " The PeerChat Application is starting.")
 	fmt.Println(blue + "[server.go]" + "[" + time.Now().Format("15:04:05") + "]" + reset + " This may take upto 30 seconds.")
 
@@ -36,7 +31,7 @@ func (network *Network) ConnectToNetwork() {
 	fmt.Println(blue + "[server.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Service Peers")
 
 	// Join the chat room
-	network.ChatRoom, _ = JoinChatRoom(network.P2p, username, chatroom)
+	network.ChatRoom, _ = JoinChatRoom(network.P2p, "username")
 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Joined the '%s' chatroom as '%s'\n", network.ChatRoom.RoomName, network.ChatRoom.UserName)
 
 	// Wait for network setup to complete
