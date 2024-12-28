@@ -28,30 +28,25 @@ func (network *Network) ConnectToNetwork() {
 
 	// Create a new P2PHost
 	network.P2p = NewP2P()
-
 	fmt.Println(blue + "[server.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Completed P2P Setup")
 
 	// Connect to peers with the chosen discovery method
 	network.P2p.AdvertiseConnect()
-
+	// network.P2p.AnnounceConnect()
 	fmt.Println(blue + "[server.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Service Peers")
 
 	// Join the chat room
 	network.ChatRoom, _ = JoinChatRoom(network.P2p, username, chatroom)
-
 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Joined the '%s' chatroom as '%s'\n", network.ChatRoom.RoomName, network.ChatRoom.UserName)
 
 	// Wait for network setup to complete
 	time.Sleep(time.Second * 5)
-
 	fmt.Println(blue + "[server.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Service Peers")
 
 	// Print my peer ID
-
 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" My Peer ID: %s\n", network.ChatRoom.SelfID())
 
 	// Print my multiaddress
-
 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" My Multiaddress: %s\n", network.P2p.AllNodeAddr())
 
 	go network.starteventhandler()

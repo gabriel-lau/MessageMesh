@@ -17,6 +17,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
 	discoveryRouting "github.com/libp2p/go-libp2p/p2p/discovery/routing"
+	dutil "github.com/libp2p/go-libp2p/p2p/discovery/util"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/mr-tron/base58/base58"
@@ -62,25 +63,18 @@ func NewP2P() *P2P {
 
 	// Setup a P2P Host Node
 	nodehost, kaddht := setupHost(ctx)
-	// Debug log
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the P2P Host and the Kademlia DHT.")
 
 	// Bootstrap the Kad DHT
 	bootstrapDHT(ctx, nodehost, kaddht)
-	// Debug log
-
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Bootstrapped the Kademlia DHT and Connected to Bootstrap Peers")
 
 	// Create a peer discovery service using the Kad DHT
 	routingdiscovery := discoveryRouting.NewRoutingDiscovery(kaddht)
-	// Debug log
-
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the Peer Discovery Service.")
 
 	// Create a PubSub handler with the routing discovery
 	pubsubhandler := setupPubSub(ctx, nodehost, routingdiscovery)
-	// Debug log
-
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the PubSub Handler.")
 
 	// Return the P2P object
@@ -100,11 +94,12 @@ func NewP2P() *P2P {
 // of peer address information until the peer channel closes
 func (p2p *P2P) AdvertiseConnect() {
 	// Advertise the availabilty of the service on this node
-	ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
+	// ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
 
-	if err != nil {
-		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
-	}
+	// if err != nil {
+	// 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
+	// }
+	dutil.Advertise(p2p.Ctx, p2p.Discovery, service)
 
 	// Debug log
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Advertised the PeerChat Service.")
@@ -112,7 +107,7 @@ func (p2p *P2P) AdvertiseConnect() {
 	time.Sleep(time.Second * 5)
 	// Debug log
 
-	fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Service Time-to-Live is %s\n", ttl)
+	// fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Service Time-to-Live is %s\n", ttl)
 
 	// Find all peers advertising the same service
 	peerchan, err := p2p.Discovery.FindPeers(p2p.Ctx, service)
@@ -183,18 +178,15 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Identity Configuration.")
 
-	// // Set up TLS secured TCP transport and options
+	// Set up TLS secured TCP transport and options
 	// security := libp2p.Security(tls.ID, tls.New)
 	// transport := libp2p.Transport(tcp.NewTCPTransport)
 	// // Handle any potential error
 	// if err != nil {
-	// 	logrus.WithFields(logrus.Fields{
-	// 		"error": err.Error(),
-	// 	}).Fatalln("Failed to Generate P2P Security and Transport Configurations!")
+	// 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate P2P Security and Transport Configurations! " + err.Error())
 	// }
 
-	// // Trace log
-	// logrus.Traceln("Generated P2P Security and Transport Configurations.")
+	// fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Security and Transport Configurations.")
 
 	// Set up host listener address options
 	muladdr, err := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/0")
