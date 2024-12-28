@@ -101,6 +101,11 @@ func NewP2P() *P2P {
 func (p2p *P2P) AdvertiseConnect() {
 	// Advertise the availabilty of the service on this node
 	ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
+
+	if err != nil {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
+	}
+
 	// Debug log
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Advertised the PeerChat Service.")
 	// Sleep to give time for the advertisment to propogate
@@ -319,10 +324,12 @@ func bootstrapDHT(ctx context.Context, nodehost host.Host, kaddht *dht.IpfsDHT) 
 			// Attempt to connect to the bootstrap peer
 			if err := nodehost.Connect(ctx, *peerinfo); err != nil {
 				// Increment the total bootstrap peer count
+				fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Bootstrap Peer: " + peerinfo.ID.String() + " " + err.Error())
 				totalbootpeers++
 			} else {
 				// Increment the connected bootstrap peer count
 				connectedbootpeers++
+				fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Bootstrap Peer: " + peerinfo.ID.String())
 				// Increment the total bootstrap peer count
 				totalbootpeers++
 			}

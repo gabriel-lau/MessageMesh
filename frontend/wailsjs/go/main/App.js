@@ -10,6 +10,6 @@ export function SendMessage(arg1) {
   return window['go']['main']['App']['SendMessage'](arg1);
 }
 
-export function StartAppService(arg1) {
-  return window['go']['main']['App']['StartAppService'](arg1);
+export function WailsInit(arg1) {
+  return window['go']['main']['App']['WailsInit'](arg1);
 }

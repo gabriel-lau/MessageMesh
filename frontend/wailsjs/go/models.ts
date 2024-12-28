@@ -1,35 +1,118 @@
-export namespace backend {
+export namespace runtime {
 	
-	export class Message {
-	    recipient: string;
-	    sender: string;
-	    message: string;
-	    timestamp: string;
+	export class StoreProvider {
+	
 	
 	    static createFrom(source: any = {}) {
-	        return new Message(source);
+	        return new StoreProvider(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.recipient = source["recipient"];
-	        this.sender = source["sender"];
-	        this.message = source["message"];
-	        this.timestamp = source["timestamp"];
+	
 	    }
 	}
-	export class ChatService {
-	    recipient: string;
-	    messages: Message[];
+	export class FileSystem {
+	
 	
 	    static createFrom(source: any = {}) {
-	        return new ChatService(source);
+	        return new FileSystem(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.recipient = source["recipient"];
-	        this.messages = this.convertValues(source["messages"], Message);
+	
+	    }
+	}
+	export class Browser {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new Browser(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class Window {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new Window(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class Dialog {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new Dialog(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class Log {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new Log(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class Events {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new Events(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+	export class Runtime {
+	    // Go type: Events
+	    Events?: any;
+	    // Go type: Log
+	    Log?: any;
+	    // Go type: Dialog
+	    Dialog?: any;
+	    // Go type: Window
+	    Window?: any;
+	    // Go type: Browser
+	    Browser?: any;
+	    // Go type: FileSystem
+	    FileSystem?: any;
+	    // Go type: StoreProvider
+	    Store?: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new Runtime(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Events = this.convertValues(source["Events"], null);
+	        this.Log = this.convertValues(source["Log"], null);
+	        this.Dialog = this.convertValues(source["Dialog"], null);
+	        this.Window = this.convertValues(source["Window"], null);
+	        this.Browser = this.convertValues(source["Browser"], null);
+	        this.FileSystem = this.convertValues(source["FileSystem"], null);
+	        this.Store = this.convertValues(source["Store"], null);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -50,68 +133,6 @@ export namespace backend {
 		    return a;
 		}
 	}
-	export class ChatListService {
-	    chatservices: ChatService[];
-	
-	    static createFrom(source: any = {}) {
-	        return new ChatListService(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.chatservices = this.convertValues(source["chatservices"], ChatService);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class AppService {
-	    chatListService: ChatListService;
-	
-	    static createFrom(source: any = {}) {
-	        return new AppService(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.chatListService = this.convertValues(source["chatListService"], ChatListService);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	
-	
 
 }
 

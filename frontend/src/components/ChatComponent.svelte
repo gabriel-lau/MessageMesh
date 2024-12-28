@@ -3,14 +3,19 @@
   import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
   import { PaperPlaneOutline } from 'flowbite-svelte-icons';
   import { SendMessage } from '../../wailsjs/go/main/App.js';
-  // import { backend } from '../../wailsjs/go/models';
+  import * as Wails from '../../wailsjs/runtime/runtime.js';
 
   let { isChatOpen = $bindable() } = $props();
   let message = $state('');
   // let chatService = new backend.ChatService();
+  Wails.EventsOn('getMessage', () => {
+    messageList.push(message);
+  });
+  let messageList: string[] = [];
 
   function sendMessage(): void {
-    // SendMessage(message, chatService);
+    SendMessage(message);
+    messageList.push(message);
     message = '';
   }
 </script>
@@ -43,14 +48,14 @@
     </div>
     <!-- Chat message 2 (Response) -->
 
-    {#each chatService.messages as message}
+    {#each messageList as message}
       <div class="flex w-full justify-end p-3">
         <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 text-white bg-primary-700 dark:bg-primary-800 rounded-l-xl rounded-br-xl">
           <div class="flex items-center justify-end space-x-2 rtl:space-x-reverse">
             <span class="text-sm font-semibold text-white">Bonnie Green</span>
             <span class="text-sm font-normal text-gray-300">11:46</span>
           </div>
-          <p class="text-sm font-normal py-2.5 text-white">{message.message}</p>
+          <p class="text-sm font-normal py-2.5 text-white">{message}</p>
           <span class="text-sm font-normal text-end text-gray-300">Delivered</span>
         </div>
       </div>
