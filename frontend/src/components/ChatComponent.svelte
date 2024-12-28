@@ -9,13 +9,13 @@
   let message = $state('');
   // let chatService = new backend.ChatService();
   Wails.EventsOn('getMessage', () => {
-    messageList.push(message);
+    messageList.push({ message: message });
   });
-  let messageList: string[] = [];
+  let messageList = $state([{}]);
 
   function sendMessage(): void {
     SendMessage(message);
-    messageList.push(message);
+    messageList.push({ message: message });
     message = '';
   }
 </script>
@@ -51,11 +51,11 @@
     {#each messageList as message}
       <div class="flex w-full justify-end p-3">
         <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 text-white bg-primary-700 dark:bg-primary-800 rounded-l-xl rounded-br-xl">
-          <div class="flex items-center justify-end space-x-2 rtl:space-x-reverse">
+          <div class="flex items-center space-x-2 rtl:space-x-reverse">
             <span class="text-sm font-semibold text-white">Bonnie Green</span>
             <span class="text-sm font-normal text-gray-300">11:46</span>
           </div>
-          <p class="text-sm font-normal py-2.5 text-white">{message}</p>
+          <p class="text-sm font-normal py-2.5 text-white">{message.message}</p>
           <span class="text-sm font-normal text-end text-gray-300">Delivered</span>
         </div>
       </div>
