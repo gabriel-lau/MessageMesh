@@ -10,6 +10,9 @@ const (
 	reset  = "\033[0m"
 	purple = "\033[35m"
 	pink   = "\033[95m"
+	green  = "\033[32m"
+	yellow = "\033[33m"
+	red    = "\033[31m"
 )
 
 type Network struct {

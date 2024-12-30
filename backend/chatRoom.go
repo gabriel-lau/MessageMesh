@@ -60,19 +60,19 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	topic, err := p2phost.PubSub.Join("messagemesh")
 	// Check the error
 	if err != nil {
-		fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not join the chat room")
+		fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not join the chat room")
 		return nil, err
 	}
-	fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Joined the chat room")
+	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Joined the chat room")
 
 	// Subscribe to the PubSub topic
 	sub, err := topic.Subscribe()
 	// Check the error
 	if err != nil {
-		fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not subscribe to the chat room")
+		fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not subscribe to the chat room")
 		return nil, err
 	}
-	fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscribed to the chat room")
+	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscribed to the chat room")
 
 	// Create cancellable context
 	pubsubctx, cancel := context.WithCancel(context.Background())
@@ -97,11 +97,11 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 
 	// Start the subscribe loop
 	go chatroom.SubLoop()
-	fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "SubLoop started")
+	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "SubLoop started")
 
 	// Start the publish loop
 	go chatroom.PubLoop()
-	fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PubLoop started")
+	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PubLoop started")
 
 	// Return the chatroom
 	return chatroom, nil
@@ -127,19 +127,19 @@ func (cr *ChatRoom) PubLoop() {
 			messagebytes, err := json.Marshal(m)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not marshal JSON"}
-				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not marshal JSON")
+				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not marshal JSON")
 				continue
 			}
-			fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
+			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
 
 			// Publish the message to the topic
 			err = cr.pstopic.Publish(cr.psctx, messagebytes)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not publish to topic"}
-				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not publish to topic")
+				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not publish to topic")
 				continue
 			}
-			fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message published")
+			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message published")
 		}
 	}
 }
@@ -162,16 +162,16 @@ func (cr *ChatRoom) SubLoop() {
 				// Close the messages queue (subscription has closed)
 				close(cr.Inbound)
 				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "subscription has closed"}
-				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscription has closed")
+				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscription has closed")
 				return
 			}
 
 			// Check if message is from self
 			if message.ReceivedFrom == cr.selfid {
-				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from self")
+				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from self")
 				continue
 			} else {
-				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from other peer")
+				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from other peer")
 			}
 
 			// Declare a ChatMessage
@@ -180,10 +180,10 @@ func (cr *ChatRoom) SubLoop() {
 			err = json.Unmarshal(message.Data, cm)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "could not unmarshal JSON"}
-				fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not unmarshal JSON")
+				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not unmarshal JSON")
 				continue
 			}
-			fmt.Println(pink + "[chat.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
+			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
 
 			// Send the ChatMessage into the message queue
 			cr.Inbound <- *cm
