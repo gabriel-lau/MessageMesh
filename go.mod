@@ -16,22 +16,6 @@ require (
 )
 
 require (
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/abadojack/whatlanggo v1.0.1 // indirect
-	github.com/fatih/color v1.7.0 // indirect
-	github.com/go-playground/colors v1.2.0 // indirect
-	github.com/jackmordaunt/icns v1.0.0 // indirect
-	github.com/kennygrant/sanitize v1.2.4 // indirect
-	github.com/leaanthony/spinner v0.5.3 // indirect
-	github.com/leaanthony/synx v0.1.0 // indirect
-	github.com/leaanthony/wincursor v0.1.0 // indirect
-	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/syossan27/tebata v0.0.0-20180602121909-b283fe4bc5ba // indirect
-	golang.org/x/image v0.14.0 // indirect
-)
-
-require (
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
@@ -145,7 +129,6 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wailsapp/go-webview2 v1.0.16 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
-	github.com/wailsapp/wails v1.16.9
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	go.opencensus.io v0.24.0 // indirect

@@ -8,8 +8,8 @@
   let { isChatOpen = $bindable() } = $props();
   let message = $state('');
   // let chatService = new backend.ChatService();
-  Wails.EventsOn('getMessage', () => {
-    messageList.push({ message: message });
+  Wails.EventsOn('getMessage', (newMessage) => {
+    messageList.push({ message: newMessage });
   });
   let messageList = $state([{}]);
 

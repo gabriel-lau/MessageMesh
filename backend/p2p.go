@@ -20,6 +20,8 @@ import (
 	dutil "github.com/libp2p/go-libp2p/p2p/discovery/util"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
+	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/mr-tron/base58/base58"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multihash"
@@ -102,7 +104,7 @@ func (p2p *P2P) AdvertiseConnect() {
 	dutil.Advertise(p2p.Ctx, p2p.Discovery, service)
 
 	// Debug log
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Advertised the PeerChat Service.")
+	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Advertised the MessageMesh Service.")
 	// Sleep to give time for the advertisment to propogate
 	time.Sleep(time.Second * 5)
 	// Debug log
@@ -118,7 +120,7 @@ func (p2p *P2P) AdvertiseConnect() {
 	}
 	// Trace log
 
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Discovered PeerChat Service Peers.")
+	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Discovered MessageMesh Service Peers.")
 
 	// Connect to peers as they are discovered
 	go handlePeerDiscovery(p2p.Host, peerchan)
@@ -179,14 +181,14 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Identity Configuration.")
 
 	// Set up TLS secured TCP transport and options
-	// security := libp2p.Security(tls.ID, tls.New)
-	// transport := libp2p.Transport(tcp.NewTCPTransport)
-	// // Handle any potential error
-	// if err != nil {
-	// 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate P2P Security and Transport Configurations! " + err.Error())
-	// }
+	security := libp2p.Security(tls.ID, tls.New)
+	transport := libp2p.Transport(tcp.NewTCPTransport)
+	// Handle any potential error
+	if err != nil {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate P2P Security and Transport Configurations! " + err.Error())
+	}
 
-	// fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Security and Transport Configurations.")
+	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Security and Transport Configurations.")
 
 	// Set up host listener address options
 	muladdr, err := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/0")
@@ -232,7 +234,7 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Routing Configurations.")
 
 	// opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, relay)
-	opts := libp2p.ChainOptions(identity, listen, muxer, conn, nat, routing, autoNat)
+	opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, autoNat)
 
 	// Construct a new libP2P host with the created options
 	libhost, err := libp2p.New(opts)
@@ -345,11 +347,13 @@ func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 		if peer.ID == nodehost.ID() {
 			continue
 		}
-
-		fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Discovered Peer: %s\n", peer.ID.String())
-
 		// Connect to the peer
-		nodehost.Connect(context.Background(), peer)
+		err := nodehost.Connect(context.Background(), peer)
+		if err != nil {
+			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Peer: " + peer.ID.String() + err.Error())
+		} else {
+			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
+		}
 	}
 }
 

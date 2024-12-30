@@ -48,8 +48,8 @@ func (network *Network) ConnectToNetwork() {
 }
 
 func (network *Network) starteventhandler() {
-	refreshticker := time.NewTicker(time.Second)
-	defer refreshticker.Stop()
+	// refreshticker := time.NewTicker(time.Second)
+	// defer refreshticker.Stop()
 	network.ChatRoom.Outbound <- "I am " + network.ChatRoom.selfid.String()
 	for {
 		select {
@@ -72,8 +72,8 @@ func (network *Network) starteventhandler() {
 			// Add the log to the message box
 			fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Log: %s\n", log)
 
-		case <-refreshticker.C:
-			// Refresh the list of peers in the chat room periodically
+		// case <-refreshticker.C:
+		// 	// Refresh the list of peers in the chat room periodically
 
 		case <-network.ChatRoom.psctx.Done():
 			// End the event loop

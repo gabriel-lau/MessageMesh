@@ -24,6 +24,13 @@
     UserCircleSolid
   } from 'flowbite-svelte-icons';
   import { EventsOn } from '../../wailsjs/runtime/runtime';
+  import * as Wails from '../../wailsjs/runtime/runtime.js';
+  let peerList = $state([]);
+  Wails.EventsOn('getPeerList', (newPeerList) => {
+    console.log(newPeerList);
+    peerList = newPeerList;
+  });
+
   let spanClass = 'text-xs text-center';
   let newChatModal = false;
   let status: 'green' | 'red' | 'disabled' | 'gray' = 'green';
@@ -45,7 +52,7 @@
           </svelte:fragment>
         </SidebarItem>
 
-        <SidebarItem label="20 Peers Online" class="flex flex-col" {spanClass} href="#">
+        <SidebarItem label="Connected to {peerList.length} peers" class="flex flex-col" {spanClass} href="#">
           <svelte:fragment slot="icon">
             <DrawSquareOutline class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
           </svelte:fragment>

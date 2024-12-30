@@ -5,7 +5,8 @@
   import NavigationRailComponent from './components/NavigationRailComponent.svelte';
   import ChatListComponent from './components/ChatListComponent.svelte';
   import ChatComponent from './components/ChatComponent.svelte';
-  // import Wails from '@wailsapp/runtime';
+  import * as Wails from '../wailsjs/runtime/runtime.js';
+  import * as Main from '../wailsjs/go/main/app.js';
 
   let name2 = $state('');
 

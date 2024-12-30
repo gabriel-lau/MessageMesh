@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/wailsapp/wails"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const (
@@ -20,7 +20,6 @@ const (
 type App struct {
 	ctx     context.Context
 	network backend.Network
-	runtime *wails.Runtime
 }
 
 // NewApp creates a new App application struct
@@ -33,20 +32,24 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.network.ConnectToNetwork()
-}
 
-func (a *App) WailsInit(runtime *wails.Runtime) error {
+	// Events Emitter
 	go func() {
+		fmt.Println(blue + "[app.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Wails events emitter started")
+		refreshticker := time.NewTicker(time.Second)
+		defer refreshticker.Stop()
+
 		for {
 			select {
 			case msg := <-a.network.ChatRoom.Inbound:
-				runtime.Events.Emit("getMessage", msg.Message)
-				fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
+				runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
+				fmt.Printf(blue+"[app.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
 				time.Sleep(1 * time.Second)
+			case <-refreshticker.C:
+				runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
 			}
 		}
 	}()
-	return nil
 }
 
 // Greet returns a greeting for the given name
