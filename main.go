@@ -13,7 +13,7 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
-var headless = false
+var headless = true
 
 const (
 	yellow = "\033[33m"

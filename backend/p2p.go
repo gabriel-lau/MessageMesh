@@ -10,18 +10,17 @@ import (
 
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
+	connmgr "github.com/libp2p/go-libp2p-connmgr"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	host "github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/routing"
+	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/crypto"
-	host "github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/routing"
-	discoveryRouting "github.com/libp2p/go-libp2p/p2p/discovery/routing"
-	dutil "github.com/libp2p/go-libp2p/p2p/discovery/util"
-	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
-	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
-	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
-	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
+	tls "github.com/libp2p/go-libp2p-tls"
+	yamux "github.com/libp2p/go-libp2p-yamux"
+	"github.com/libp2p/go-tcp-transport"
 	"github.com/mr-tron/base58/base58"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multihash"
@@ -43,7 +42,7 @@ type P2P struct {
 	KadDHT *dht.IpfsDHT
 
 	// Represents the peer discovery service
-	Discovery *discoveryRouting.RoutingDiscovery
+	Discovery *discovery.RoutingDiscovery
 
 	// Represents the PubSub Handler
 	PubSub *pubsub.PubSub
@@ -72,7 +71,7 @@ func NewP2P() *P2P {
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Bootstrapped the Kademlia DHT and Connected to Bootstrap Peers")
 
 	// Create a peer discovery service using the Kad DHT
-	routingdiscovery := discoveryRouting.NewRoutingDiscovery(kaddht)
+	routingdiscovery := discovery.NewRoutingDiscovery(kaddht)
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the Peer Discovery Service.")
 
 	// Create a PubSub handler with the routing discovery
@@ -96,12 +95,12 @@ func NewP2P() *P2P {
 // of peer address information until the peer channel closes
 func (p2p *P2P) AdvertiseConnect() {
 	// Advertise the availabilty of the service on this node
-	// ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
+	ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
 
-	// if err != nil {
-	// 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
-	// }
-	dutil.Advertise(p2p.Ctx, p2p.Discovery, service)
+	if err != nil {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
+	}
+	// dutil.Advertise(p2p.Ctx, p2p.Discovery, service)
 
 	// Debug log
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Advertised the MessageMesh Service.")
@@ -109,7 +108,7 @@ func (p2p *P2P) AdvertiseConnect() {
 	time.Sleep(time.Second * 5)
 	// Debug log
 
-	// fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Service Time-to-Live is %s\n", ttl)
+	fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Service Time-to-Live is %s\n", ttl)
 
 	// Find all peers advertising the same service
 	peerchan, err := p2p.Discovery.FindPeers(p2p.Ctx, service)
@@ -181,7 +180,8 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Identity Configuration.")
 
 	// Set up TLS secured TCP transport and options
-	security := libp2p.Security(tls.ID, tls.New)
+	tlstransport, err := tls.New(prvkey)
+	security := libp2p.Security(tls.ID, tlstransport)
 	transport := libp2p.Transport(tcp.NewTCPTransport)
 	// Handle any potential error
 	if err != nil {
@@ -205,8 +205,7 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 
 	// Set up the stream multiplexer and connection manager options
 	muxer := libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport)
-	connmgr, err := connmgr.NewConnManager(100, 400, connmgr.WithGracePeriod(60*time.Second))
-	conn := libp2p.ConnectionManager(connmgr)
+	conn := libp2p.ConnectionManager(connmgr.NewConnManager(100, 400, time.Minute))
 
 	// Trace log
 
@@ -214,8 +213,7 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 
 	// Setup NAT traversal and relay options
 	nat := libp2p.NATPortMap()
-
-	autoNat := libp2p.EnableAutoNATv2()
+	relay := libp2p.EnableAutoRelay()
 
 	// Trace log
 
@@ -234,10 +232,10 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Routing Configurations.")
 
 	// opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, relay)
-	opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, autoNat)
+	opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, relay)
 
 	// Construct a new libP2P host with the created options
-	libhost, err := libp2p.New(opts)
+	libhost, err := libp2p.New(ctx, opts)
 	// Handle any potential error
 	if err != nil {
 
@@ -274,7 +272,7 @@ func setupKadDHT(ctx context.Context, nodehost host.Host) *dht.IpfsDHT {
 
 // A function that generates a PubSub Handler object and returns it
 // Requires a node host and a routing discovery service.
-func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *discoveryRouting.RoutingDiscovery) *pubsub.PubSub {
+func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *discovery.RoutingDiscovery) *pubsub.PubSub {
 	// Create a new PubSub service which uses a GossipSub router
 	pubsubhandler, err := pubsub.NewGossipSub(ctx, nodehost, pubsub.WithDiscovery(routingdiscovery))
 	// Handle any potential error
