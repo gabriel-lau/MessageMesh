@@ -348,12 +348,14 @@ func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 			continue
 		}
 		// Connect to the peer
-		err := nodehost.Connect(context.Background(), peer)
-		if err != nil {
-			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Peer: " + peer.ID.String() + err.Error())
-		} else {
-			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
-		}
+		go func() {
+			err := nodehost.Connect(context.Background(), peer)
+			if err != nil {
+				fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Peer: " + peer.ID.String() + err.Error())
+			} else {
+				fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
+			}
+		}()
 	}
 }
 
