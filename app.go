@@ -5,6 +5,9 @@ import (
 	models "MessageMesh/backend/models"
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const (
@@ -31,22 +34,22 @@ func (a *App) startup(ctx context.Context) {
 	a.network.ConnectToNetwork()
 
 	// Events Emitter
-	// go func() {
-	// 	fmt.Println(blue + "[app.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Wails events emitter started")
-	// 	refreshticker := time.NewTicker(time.Second)
-	// 	defer refreshticker.Stop()
+	go func() {
+		fmt.Println(blue + "[app.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Wails events emitter started")
+		refreshticker := time.NewTicker(time.Second)
+		defer refreshticker.Stop()
 
-	// 	for {
-	// 		select {
-	// 		case msg := <-a.network.ChatRoom.Inbound:
-	// 			runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
-	// 			fmt.Printf(blue+"[app.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
-	// 			time.Sleep(1 * time.Second)
-	// 		case <-refreshticker.C:
-	// 			runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
-	// 		}
-	// 	}
-	// }()
+		for {
+			select {
+			case msg := <-a.network.ChatRoom.Inbound:
+				runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
+				fmt.Printf(blue+"[app.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
+				time.Sleep(1 * time.Second)
+			case <-refreshticker.C:
+				runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
+			}
+		}
+	}()
 }
 
 // Greet returns a greeting for the given name
