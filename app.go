@@ -39,14 +39,16 @@ func (a *App) startup(ctx context.Context) {
 		refreshticker := time.NewTicker(time.Second)
 		defer refreshticker.Stop()
 
-		for {
-			select {
-			case msg := <-a.network.ChatRoom.Inbound:
-				runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
-				fmt.Printf(blue+"[app.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
-				time.Sleep(1 * time.Second)
-			case <-refreshticker.C:
-				runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
+		if GetEnvVar("HEADELESS") == "false" {
+			for {
+				select {
+				case msg := <-a.network.ChatRoom.Inbound:
+					runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
+					fmt.Printf(blue+"[app.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
+					time.Sleep(1 * time.Second)
+				case <-refreshticker.C:
+					runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
+				}
 			}
 		}
 	}()

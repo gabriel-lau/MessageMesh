@@ -4,6 +4,7 @@ go 1.23.2
 
 require (
 	github.com/ipfs/go-cid v0.0.7
+	github.com/joho/godotenv v1.5.1
 	github.com/libp2p/go-libp2p v0.14.2
 	github.com/libp2p/go-libp2p-connmgr v0.2.4
 	github.com/libp2p/go-libp2p-core v0.8.5
