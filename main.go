@@ -29,7 +29,7 @@ func main() {
 		ctx := context.Background()
 		app.startup(ctx)
 		for {
-			// app.SendMessage("Hello")
+			app.SendMessage("Hello I am " + GetEnvVar("USERNAME"))
 			time.Sleep(3 * time.Second)
 		}
 	}
