@@ -112,7 +112,7 @@ func (cr *ChatRoom) PubLoop() {
 		case message := <-cr.Outbound:
 			// Create a ChatMessage
 			m := models.Message{
-				Sender:    string(cr.selfid.Pretty()),
+				Sender:    cr.selfid.Pretty(),
 				Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
 				Message:   message,
 				Timestamp: time.Now().Format("2006-01-02 15:04:05"),
