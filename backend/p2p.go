@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
 	"sync"
@@ -11,7 +10,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
 	connmgr "github.com/libp2p/go-libp2p-connmgr"
-	"github.com/libp2p/go-libp2p-core/crypto"
 	host "github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
@@ -153,7 +151,15 @@ func (p2p *P2P) AnnounceConnect() {
 // libp2p host object for the given context. The created host is returned
 func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	// Set up the host identity options
-	prvkey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+	// prvkey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+	keypair, err := ReadKeyPair()
+	if err != nil {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Read Key Pair! " + err.Error())
+		// Generate a new key pair
+		keypair, err = NewKeyPair()
+	}
+	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Read Key Pair.")
+	prvkey := keypair.PrivKey
 	identity := libp2p.Identity(prvkey)
 	if err != nil {
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate P2P Identity Configuration! " + err.Error())
