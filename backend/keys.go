@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"os"
 
 	libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
 	bolt "go.etcd.io/bbolt"
@@ -18,13 +19,21 @@ type KeyPair struct {
 }
 
 const (
-	dbpath = "db/keys.db"
+	directory = "db"
+	file      = "keys.db"
+	dbpath    = directory + "/" + file
 )
 
 // Generate a new key pair
 func NewKeyPair() (KeyPair, error) {
 	keypair := KeyPair{}
 
+	// Create new directory (db)
+	err := os.MkdirAll(directory, 0755)
+	if err != nil {
+		fmt.Println("Error creating directory:", err)
+		return keypair, err
+	}
 	prvkey, pubkey, err := libp2pcrypto.GenerateKeyPairWithReader(libp2pcrypto.RSA, 2048, rand.Reader)
 	if err != nil {
 		fmt.Println("Error generating key pair:", err)
@@ -91,7 +100,6 @@ func NewKeyPair() (KeyPair, error) {
 // Get the KeyPair from the database
 func ReadKeyPair() (KeyPair, error) {
 	keyPair := KeyPair{}
-
 	boltDB, err := bolt.Open(dbpath, 0600, nil)
 	if err != nil {
 		fmt.Println("Error opening database:", err)
