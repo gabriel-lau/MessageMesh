@@ -62,7 +62,7 @@ func (a *App) Greet(name string) string {
 // CHATCOMPONET
 func (a *App) SendMessage(message string) {
 	newMessage := models.Message{
-		Sender:    string(a.network.ChatRoom.SelfID()),
+		Sender:    string(a.network.ChatRoom.SelfID().Pretty()),
 		Receiver:  "QmVw73A6nBJFFjt5AAyy1EEUSCsXX6GHZTGxnsVnhPzNRt",
 		Message:   message,
 		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
