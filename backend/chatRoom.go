@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"MessageMesh/backend/models"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,7 +17,7 @@ type ChatRoom struct {
 	Host *P2P
 
 	// Represents the channel of incoming messages
-	Inbound chan chatmessage
+	Inbound chan models.Message
 	// Represents the channel of outgoing messages
 	Outbound chan string
 	// Represents the channel of chat log messages
@@ -37,13 +38,6 @@ type ChatRoom struct {
 	pstopic *pubsub.Topic
 	// Represents the PubSub Subscription for the topic
 	psub *pubsub.Subscription
-}
-
-// A structure that represents a chat message
-type chatmessage struct {
-	Message    string `json:"message"`
-	SenderID   string `json:"senderid"`
-	SenderName string `json:"sendername"`
 }
 
 // A structure that represents a chat log
@@ -81,7 +75,7 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	chatroom := &ChatRoom{
 		Host: p2phost,
 
-		Inbound:  make(chan chatmessage),
+		Inbound:  make(chan models.Message),
 		Outbound: make(chan string),
 		Logs:     make(chan chatlog),
 
@@ -117,10 +111,11 @@ func (cr *ChatRoom) PubLoop() {
 
 		case message := <-cr.Outbound:
 			// Create a ChatMessage
-			m := chatmessage{
-				Message:    message,
-				SenderID:   cr.selfid.String(),
-				SenderName: cr.UserName,
+			m := models.Message{
+				Sender:    string(cr.selfid),
+				Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
+				Message:   message,
+				Timestamp: time.Now().Format("2006-01-02 15:04:05"),
 			}
 
 			// Marshal the ChatMessage into a JSON
@@ -175,7 +170,7 @@ func (cr *ChatRoom) SubLoop() {
 			}
 
 			// Declare a ChatMessage
-			cm := &chatmessage{}
+			cm := &models.Message{}
 			// Unmarshal the message data into a ChatMessage
 			err = json.Unmarshal(message.Data, cm)
 			if err != nil {

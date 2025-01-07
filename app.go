@@ -62,10 +62,10 @@ func (a *App) Greet(name string) string {
 // CHATCOMPONET
 func (a *App) SendMessage(message string) {
 	newMessage := models.Message{
-		Sender:    "test",
-		Receiver:  "test",
+		Sender:    string(a.network.P2p.Host.ID()),
+		Receiver:  "QmVw73A6nBJFFjt5AAyy1EEUSCsXX6GHZTGxnsVnhPzNRt",
 		Message:   message,
-		Timestamp: "test",
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
 	}
 
 	a.network.SendMessage(newMessage.Message)
