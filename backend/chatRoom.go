@@ -110,10 +110,10 @@ func (cr *ChatRoom) PubLoop() {
 			return
 
 		case message := <-cr.Outbound:
-			// Create a ChatMessage
+			receiverID, _ := peer.IDFromString("QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ")
 			m := models.Message{
-				Sender:    cr.selfid.Pretty(),
-				Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
+				Sender:    cr.selfid,
+				Receiver:  receiverID,
 				Message:   message,
 				Timestamp: time.Now().Format("2006-01-02 15:04:05"),
 			}
@@ -180,8 +180,8 @@ func (cr *ChatRoom) SubLoop() {
 			}
 			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
 
-			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sender: " + cm.Sender)
-			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Receiver: " + cm.Receiver)
+			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sender: " + cm.Sender.Pretty())
+			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Receiver: " + cm.Receiver.Pretty())
 
 			// Send the ChatMessage into the message queue
 			cr.Inbound <- *cm
@@ -205,11 +205,6 @@ func (cr *ChatRoom) Exit() {
 	cr.psub.Cancel()
 	// Close the topic handler
 	cr.pstopic.Close()
-}
-
-// A method of ChatRoom that updates the chat user name
-func (cr *ChatRoom) UpdateUser(username string) {
-	cr.UserName = username
 }
 
 // A method of ChatRoom that returns the self peer ID

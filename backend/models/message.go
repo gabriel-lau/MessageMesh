@@ -1,8 +1,10 @@
 package models
 
+import "github.com/libp2p/go-libp2p-core/peer"
+
 type Message struct {
-	Sender       string        `json:"sender"`
-	Receiver     string        `json:"receiver"`
+	Sender       peer.ID       `json:"sender"`
+	Receiver     peer.ID       `json:"receiver"`
 	Message      string        `json:"message"`
 	Timestamp    string        `json:"timestamp"`
 	FirstMessage *FirstMessage `json:"firstMessage"`
