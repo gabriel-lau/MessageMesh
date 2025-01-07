@@ -180,6 +180,9 @@ func (cr *ChatRoom) SubLoop() {
 			}
 			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
 
+			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sender: " + cm.Sender)
+			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Receiver: " + cm.Receiver)
+
 			// Send the ChatMessage into the message queue
 			cr.Inbound <- *cm
 		}
