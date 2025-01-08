@@ -15,6 +15,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/routing"
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
+	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	tls "github.com/libp2p/go-libp2p-tls"
 	yamux "github.com/libp2p/go-libp2p-yamux"
@@ -323,9 +324,9 @@ func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 		err := nodehost.Connect(context.Background(), peer)
 		if err != nil {
 			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Peer: " + peer.ID.String() + err.Error())
-		} else {
-			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
 		}
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
+		nodehost.Peerstore().AddAddrs(peer.ID, peer.Addrs, peerstore.PermanentAddrTTL)
 	}
 }
 
@@ -362,9 +363,4 @@ func (p2p *P2P) AllNodeAddr() []string {
 		addrs = append(addrs, addr.String())
 	}
 	return addrs
-}
-
-// Get bootstrap peers
-func (p2p *P2P) BootstrapPeers() []peer.AddrInfo {
-	return dht.GetDefaultBootstrapPeerAddrInfos()
 }

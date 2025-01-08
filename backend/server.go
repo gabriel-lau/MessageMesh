@@ -48,6 +48,8 @@ func (network *Network) ConnectToNetwork() {
 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" My Multiaddress: %s\n", network.P2p.AllNodeAddr())
 
 	go network.starteventhandler()
+
+	go StartRaft(network.P2p)
 }
 
 func (network *Network) starteventhandler() {
