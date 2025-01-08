@@ -10,7 +10,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.9.0
 	github.com/libp2p/go-libp2p-discovery v0.5.1
 	github.com/libp2p/go-libp2p-kad-dht v0.15.0
-	github.com/libp2p/go-libp2p-pubsub v0.5.2
+	github.com/libp2p/go-libp2p-pubsub v0.5.6
 	github.com/libp2p/go-libp2p-raft v0.1.8
 	github.com/libp2p/go-libp2p-tls v0.2.0
 	github.com/libp2p/go-libp2p-yamux v0.6.0
