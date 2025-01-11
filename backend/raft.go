@@ -40,6 +40,7 @@ func StartRaft(network *Network) {
 			ID:       raft.ServerID(pid.String()),
 			Address:  raft.ServerAddress(pid.String()),
 		}
+		fmt.Println("Server: ", servers[i])
 	}
 	serverConfig := raft.Configuration{
 		Servers: servers,
@@ -98,6 +99,7 @@ func StartRaft(network *Network) {
 
 	actor := libp2praft.NewActor(raft)
 	raftconsensus.SetActor(actor)
+	time.Sleep(10 * time.Second)
 
 	go func() {
 		for {
