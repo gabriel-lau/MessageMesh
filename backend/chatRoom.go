@@ -8,38 +8,9 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
 // A structure that represents a PubSub Chat Room
-type ChatRoom struct {
-	// Represents the P2P Host for the ChatRoom
-	Host *P2P
-
-	// Represents the channel of incoming messages
-	Inbound chan models.Message
-	// Represents the channel of outgoing messages
-	Outbound chan string
-	// Represents the channel of chat log messages
-	Logs chan chatlog
-
-	// Represents the name of the chat room
-	RoomName string
-	// Represent the name of the user in the chat room
-	UserName string
-	// Represents the host ID of the peer
-	selfid peer.ID
-
-	// Represents the chat room lifecycle context
-	psctx context.Context
-	// Represents the chat room lifecycle cancellation function
-	pscancel context.CancelFunc
-	// Represents the PubSub Topic of the ChatRoom
-	pstopic *pubsub.Topic
-	// Represents the PubSub Subscription for the topic
-	psub *pubsub.Subscription
-}
-
 // A structure that represents a chat log
 type chatlog struct {
 	logprefix string
@@ -73,8 +44,6 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 
 	// Create a ChatRoom object
 	chatroom := &ChatRoom{
-		Host: p2phost,
-
 		Inbound:  make(chan models.Message),
 		Outbound: make(chan string),
 		Logs:     make(chan chatlog),

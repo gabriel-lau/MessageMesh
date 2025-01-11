@@ -15,7 +15,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/routing"
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	tls "github.com/libp2p/go-libp2p-tls"
 	yamux "github.com/libp2p/go-libp2p-yamux"
@@ -30,22 +29,6 @@ const (
 )
 
 // A structure that represents a P2P Host
-type P2P struct {
-	// Represents the host context layer
-	Ctx context.Context
-
-	// Represents the libp2p host
-	Host host.Host
-
-	// Represents the DHT routing table
-	KadDHT *dht.IpfsDHT
-
-	// Represents the peer discovery service
-	Discovery *discovery.RoutingDiscovery
-
-	// Represents the PubSub Handler
-	PubSub *pubsub.PubSub
-}
 
 /*
 A constructor function that generates and returns a P2P object.
@@ -326,7 +309,6 @@ func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Peer: " + peer.ID.String() + err.Error())
 		}
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
-		nodehost.Peerstore().AddAddrs(peer.ID, peer.Addrs, peerstore.PermanentAddrTTL)
 	}
 }
 
@@ -363,4 +345,9 @@ func (p2p *P2P) AllNodeAddr() []string {
 		addrs = append(addrs, addr.String())
 	}
 	return addrs
+}
+
+func (p2p *P2P) GetPeerStore() []peer.ID {
+	peers := p2p.Host.Peerstore().Peers()
+	return peers
 }
