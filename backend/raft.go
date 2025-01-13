@@ -55,7 +55,7 @@ func StartRaft(network *Network) {
 	// --
 
 	// -- Configuration
-	raftQuiet := true
+	raftQuiet := false
 	config := raft.DefaultConfig()
 	if raftQuiet {
 		config.LogOutput = io.Discard
@@ -88,10 +88,7 @@ func StartRaft(network *Network) {
 	} else {
 		fmt.Println("Already initialized!!")
 	}
-	// --
 
-	// Create Raft instance. Our consensus.FSM() provides raft.FSM
-	// implementation
 	raft, err := raft.NewRaft(config, raftconsensus.FSM(), logStore, logStore, snapshots, transport)
 	if err != nil {
 		fmt.Println(err)
@@ -116,6 +113,17 @@ func StartRaft(network *Network) {
 			time.Sleep(5 * time.Second)
 		}
 	}()
+
+	go func() {
+		for {
+			select {
+			case <-raftconsensus.Subscribe():
+				newState, _ := raftconsensus.GetCurrentState()
+				fmt.Println("New state is: ", newState.(*raftState).Now)
+			}
+		}
+	}()
+
 }
 
 func updateState(c *libp2praft.Consensus) {
@@ -131,9 +139,6 @@ func updateState(c *libp2praft.Consensus) {
 	if agreedState == nil {
 		fmt.Println("agreedState is nil: commited on a non-leader?")
 	}
-	agreedRaftState := agreedState.(*raftState)
-
-	fmt.Printf("Current state: %d\n", agreedRaftState.Now)
 }
 
 func getState(c *libp2praft.Consensus) {
