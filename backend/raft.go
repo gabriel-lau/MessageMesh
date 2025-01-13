@@ -34,6 +34,7 @@ func StartRaft(network *Network) {
 	// --
 
 	// -- Create Raft servers configuration
+	pids = append(pids, network.P2p.Host.ID())
 	servers := make([]raft.Server, len(pids))
 	for i, pid := range pids {
 		servers[i] = raft.Server{
@@ -185,6 +186,9 @@ func waitForLeader(r *raft.Raft) {
 			}
 		case <-ctx.Done():
 			fmt.Println("timed out waiting for Leader")
+			fmt.Println("Current Raft State: ", r.State())
+			fmt.Println("Current Leader: ", r.Leader())
+			return
 		}
 	}
 }
