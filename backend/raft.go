@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"time"
@@ -96,7 +97,8 @@ func StartRaft(network *Network) {
 
 	actor := libp2praft.NewActor(raft)
 	raftconsensus.SetActor(actor)
-	time.Sleep(10 * time.Second)
+
+	waitForLeader(raft)
 
 	go func() {
 		for {
@@ -151,6 +153,40 @@ func getState(c *libp2praft.Consensus) {
 		return
 	}
 	fmt.Printf("Current state: %d\n", state)
+}
+
+func waitForLeader(r *raft.Raft) {
+	obsCh := make(chan raft.Observation, 1)
+	observer := raft.NewObserver(obsCh, true, nil)
+	r.RegisterObserver(observer)
+	defer r.DeregisterObserver(observer)
+
+	// New Raft does not allow leader observation directy
+	// What's worse, there will be no notification that a new
+	// leader was elected because observations are set before
+	// setting the Leader and only when the RaftState has changed.
+	// Therefore, we need a ticker.
+
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ticker := time.NewTicker(time.Second / 2)
+	defer ticker.Stop()
+	for {
+		select {
+		case obs := <-obsCh:
+			switch obs.Data.(type) {
+			case raft.RaftState:
+				if r.Leader() != "" {
+					return
+				}
+			}
+		case <-ticker.C:
+			if r.Leader() != "" {
+				return
+			}
+		case <-ctx.Done():
+			fmt.Println("timed out waiting for Leader")
+		}
+	}
 }
 
 // func AppendServer(network *Network, pid string) {

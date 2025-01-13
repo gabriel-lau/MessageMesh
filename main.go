@@ -30,7 +30,7 @@ func main() {
 		app.startup(ctx)
 		for {
 			app.SendMessage("Hello I am " + GetEnvVar("USERNAME"))
-			time.Sleep(3 * time.Second)
+			time.Sleep(30 * time.Second)
 		}
 	}
 
