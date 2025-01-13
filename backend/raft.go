@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
 	consensus "github.com/libp2p/go-libp2p-consensus"
 	libp2praft "github.com/libp2p/go-libp2p-raft"
 )
@@ -74,8 +73,8 @@ func StartRaft(network *Network) {
 	}
 
 	// -- Log store and stable store: we use inmem.
-	// logStore := raft.NewInmemStore()
-	logStore, _ := raftboltdb.NewBoltStore("db/raft.db")
+	logStore := raft.NewInmemStore()
+	// logStore, _ := raftboltdb.NewBoltStore("db/raft.db")
 	// --
 
 	// -- Boostrap everything if necessary
