@@ -107,9 +107,11 @@ func StartRaft(network *Network) {
 				fmt.Println("I am the leader")
 				fmt.Println("Raft State: " + raft.State().String())
 				updateState(raftconsensus)
+				getState(raftconsensus)
 			} else {
 				fmt.Println("I am not the leader")
 				fmt.Println("Raft State: " + raft.State().String())
+				getState(raftconsensus)
 			}
 			time.Sleep(5 * time.Second)
 		}
@@ -133,3 +135,28 @@ func updateState(c *libp2praft.Consensus) {
 
 	fmt.Printf("Current state: %d\n", agreedRaftState.Now)
 }
+
+func getState(c *libp2praft.Consensus) {
+	state, err := c.GetCurrentState()
+	if err != nil {
+		fmt.Println(err)
+	}
+	if state == nil {
+		fmt.Println("state is nil: commited on a non-leader?")
+		return
+	}
+	fmt.Printf("Current state: %d\n", state)
+}
+
+// func AppendServer(network *Network, pid string) {
+// 	// -- Create Raft servers configuration
+// 	server := raft.Server{
+// 		Suffrage: raft.Voter,
+// 		ID:       raft.ServerID(pid),
+// 		Address:  raft.ServerAddress(pid),
+// 	}
+
+// 	serverConfig := raft.Configuration{
+// 		Servers: []raft.Server{server},
+// 	}
+// }
