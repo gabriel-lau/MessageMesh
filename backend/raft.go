@@ -105,11 +105,14 @@ func StartRaft(network *Network) {
 			if actor.IsLeader() {
 				fmt.Println("I am the leader")
 				fmt.Println("Raft State: " + raft.State().String())
+				fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
 				updateState(raftconsensus)
 				getState(raftconsensus)
 			} else {
 				fmt.Println("I am not the leader")
+				fmt.Println("Leader is: ", raft.Leader())
 				fmt.Println("Raft State: " + raft.State().String())
+				fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
 				getState(raftconsensus)
 			}
 			time.Sleep(5 * time.Second)
