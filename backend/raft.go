@@ -95,12 +95,12 @@ func StartRaft(network *Network) {
 		fmt.Println(err)
 	}
 
+	actor := libp2praft.NewActor(raft)
+	raftconsensus.SetActor(actor)
+
+	waitForLeader(raft)
+
 	go func() {
-		actor := libp2praft.NewActor(raft)
-		raftconsensus.SetActor(actor)
-
-		waitForLeader(raft)
-
 		for {
 			if actor.IsLeader() {
 				fmt.Println("I am the leader")
