@@ -1,16 +1,17 @@
-# README
+# ⚠️⚠️ WORK IN PROGRESS ⚠️⚠️
 
 ## About
+### Built with Wails, Go, Svelte, and TypeScript. 
+This is a desktop messaging app that uses a peer-to-peer network to send messages between users.  It uses a Raft consensus algorithm to maintain a consistent state between all nodes in the network.
 
-This is the official Wails Svelte-TS template.
+## Built With
+![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)
+![Svelte](https://img.shields.io/badge/svelte-%23f1413d.svg?style=for-the-badge&logo=svelte&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 
-## Live Development
-
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
-
-## Building
-
-To build a redistributable, production mode package, use `wails build`.
+### Libraries
+- (Wails)[https://wails.io/]
+- (Libp2p)[https://libp2p.io/]
+- (Bbolt)[https://github.com/etcd-io/bbolt]
+- (Hashicorp Raft)[https://github.com/hashicorp/raft]
+- (Tailwind CSS)[https://tailwindcss.com/]
