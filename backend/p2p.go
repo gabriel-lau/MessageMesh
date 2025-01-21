@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
 	"sync"
@@ -10,18 +9,16 @@ import (
 
 	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
+	connmgr "github.com/libp2p/go-libp2p-connmgr"
+	host "github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/routing"
+	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/crypto"
-	host "github.com/libp2p/go-libp2p/core/host"
-	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/routing"
-	discoveryRouting "github.com/libp2p/go-libp2p/p2p/discovery/routing"
-	dutil "github.com/libp2p/go-libp2p/p2p/discovery/util"
-	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
-	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
-	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
-	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
+	tls "github.com/libp2p/go-libp2p-tls"
+	yamux "github.com/libp2p/go-libp2p-yamux"
+	"github.com/libp2p/go-tcp-transport"
 	"github.com/mr-tron/base58/base58"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multihash"
@@ -32,22 +29,6 @@ const (
 )
 
 // A structure that represents a P2P Host
-type P2P struct {
-	// Represents the host context layer
-	Ctx context.Context
-
-	// Represents the libp2p host
-	Host host.Host
-
-	// Represents the DHT routing table
-	KadDHT *dht.IpfsDHT
-
-	// Represents the peer discovery service
-	Discovery *discoveryRouting.RoutingDiscovery
-
-	// Represents the PubSub Handler
-	PubSub *pubsub.PubSub
-}
 
 /*
 A constructor function that generates and returns a P2P object.
@@ -72,7 +53,7 @@ func NewP2P() *P2P {
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Bootstrapped the Kademlia DHT and Connected to Bootstrap Peers")
 
 	// Create a peer discovery service using the Kad DHT
-	routingdiscovery := discoveryRouting.NewRoutingDiscovery(kaddht)
+	routingdiscovery := discovery.NewRoutingDiscovery(kaddht)
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the Peer Discovery Service.")
 
 	// Create a PubSub handler with the routing discovery
@@ -96,36 +77,27 @@ func NewP2P() *P2P {
 // of peer address information until the peer channel closes
 func (p2p *P2P) AdvertiseConnect() {
 	// Advertise the availabilty of the service on this node
-	// ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
+	ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
 
-	// if err != nil {
-	// 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
-	// }
-	dutil.Advertise(p2p.Ctx, p2p.Discovery, service)
-
-	// Debug log
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Advertised the MessageMesh Service.")
-	// Sleep to give time for the advertisment to propogate
+	if err != nil {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Advertised the MessageMesh Service.")
+	}
 	time.Sleep(time.Second * 5)
-	// Debug log
-
-	// fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Service Time-to-Live is %s\n", ttl)
+	fmt.Printf(purple+"[p2p.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Service Time-to-Live is %s\n", ttl)
 
 	// Find all peers advertising the same service
 	peerchan, err := p2p.Discovery.FindPeers(p2p.Ctx, service)
-	// Handle any potential error
 	if err != nil {
 
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " P2P Peer Discovery Failed! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Discovered MessageMesh Service Peers.")
 	}
-	// Trace log
-
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Discovered MessageMesh Service Peers.")
 
 	// Connect to peers as they are discovered
 	go handlePeerDiscovery(p2p.Host, peerchan)
-	// Trace log
-
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Started Peer Connection Handler.")
 }
 
@@ -137,25 +109,19 @@ func (p2p *P2P) AdvertiseConnect() {
 func (p2p *P2P) AnnounceConnect() {
 	// Generate the Service CID
 	cidvalue := generateCID(service)
-	// Trace log
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated the Service CID.")
 
 	// Announce that this host can provide the service CID
 	err := p2p.KadDHT.Provide(p2p.Ctx, cidvalue, true)
 	if err != nil {
-
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Announce Service CID! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Announced the PeerChat Service.")
 	}
-	// Debug log
-
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Announced the PeerChat Service.")
-	// Sleep to give time for the advertisment to propogate
 	time.Sleep(time.Second * 5)
 
 	// Find the other providers for the service CID
 	peerchan := p2p.KadDHT.FindProvidersAsync(p2p.Ctx, cidvalue, 0)
-	// Trace log
-
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Discovered PeerChat Service Peers.")
 
 	// Connect to peers as they are discovered
@@ -169,56 +135,49 @@ func (p2p *P2P) AnnounceConnect() {
 // libp2p host object for the given context. The created host is returned
 func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	// Set up the host identity options
-	prvkey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+	// prvkey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+	keypair, err := ReadKeyPair()
+	if err != nil {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Read Key Pair! " + err.Error())
+		// Generate a new key pair
+		keypair, err = NewKeyPair()
+	}
+	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Read Key Pair.")
+	prvkey := keypair.PrivKey
 	identity := libp2p.Identity(prvkey)
-	// Handle any potential error
 	if err != nil {
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate P2P Identity Configuration! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Identity Configuration.")
 	}
-
-	// Trace log
-
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Identity Configuration.")
 
 	// Set up TLS secured TCP transport and options
-	security := libp2p.Security(tls.ID, tls.New)
+	tlstransport, err := tls.New(prvkey)
+	security := libp2p.Security(tls.ID, tlstransport)
 	transport := libp2p.Transport(tcp.NewTCPTransport)
-	// Handle any potential error
 	if err != nil {
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate P2P Security and Transport Configurations! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Security and Transport Configurations.")
 	}
-
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Security and Transport Configurations.")
 
 	// Set up host listener address options
 	muladdr, err := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/0")
 	listen := libp2p.ListenAddrs(muladdr)
-	// Handle any potential error
 	if err != nil {
-
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate P2P Address Listener Configuration! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Address Listener Configuration.")
 	}
-
-	// Trace log
-
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Address Listener Configuration.")
 
 	// Set up the stream multiplexer and connection manager options
 	muxer := libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport)
-	connmgr, err := connmgr.NewConnManager(100, 400, connmgr.WithGracePeriod(60*time.Second))
-	conn := libp2p.ConnectionManager(connmgr)
-
-	// Trace log
-
+	conn := libp2p.ConnectionManager(connmgr.NewConnManager(100, 400, time.Minute))
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Stream Multiplexer, Connection Manager Configurations.")
 
 	// Setup NAT traversal and relay options
 	nat := libp2p.NATPortMap()
-
-	autoNat := libp2p.EnableAutoNATv2()
-
-	// Trace log
-
+	relay := libp2p.EnableAutoRelay()
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P NAT Traversal and Relay Configurations.")
 
 	// Declare a KadDHT
@@ -228,20 +187,16 @@ func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 		kaddht = setupKadDHT(ctx, h)
 		return kaddht, err
 	})
-
-	// Trace log
-
 	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated P2P Routing Configurations.")
 
-	// opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, relay)
-	opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, autoNat)
+	opts := libp2p.ChainOptions(identity, listen, security, transport, muxer, conn, nat, routing, relay)
 
 	// Construct a new libP2P host with the created options
-	libhost, err := libp2p.New(opts)
-	// Handle any potential error
+	libhost, err := libp2p.New(ctx, opts)
 	if err != nil {
-
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Create the P2P Host! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the P2P Host.")
 	}
 
 	// Return the created host and the kademlia DHT
@@ -264,8 +219,9 @@ func setupKadDHT(ctx context.Context, nodehost host.Host) *dht.IpfsDHT {
 	kaddht, err := dht.New(ctx, nodehost, dhtmode, dhtpeers)
 	// Handle any potential error
 	if err != nil {
-
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Create the Kademlia DHT! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the Kademlia DHT.")
 	}
 
 	// Return the KadDHT
@@ -274,12 +230,14 @@ func setupKadDHT(ctx context.Context, nodehost host.Host) *dht.IpfsDHT {
 
 // A function that generates a PubSub Handler object and returns it
 // Requires a node host and a routing discovery service.
-func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *discoveryRouting.RoutingDiscovery) *pubsub.PubSub {
+func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *discovery.RoutingDiscovery) *pubsub.PubSub {
 	// Create a new PubSub service which uses a GossipSub router
 	pubsubhandler, err := pubsub.NewGossipSub(ctx, nodehost, pubsub.WithDiscovery(routingdiscovery))
 	// Handle any potential error
 	if err != nil {
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " PubSub Handler Creation Failed! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Created the PubSub Handler.")
 	}
 
 	// Return the PubSub handler
@@ -292,11 +250,9 @@ func bootstrapDHT(ctx context.Context, nodehost host.Host, kaddht *dht.IpfsDHT) 
 	// Bootstrap the DHT to satisfy the IPFS Router interface
 	if err := kaddht.Bootstrap(ctx); err != nil {
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Bootstrap the Kademlia! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Set the Kademlia DHT into Bootstrap Mode.")
 	}
-
-	// Trace log
-
-	fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Set the Kademlia DHT into Bootstrap Mode.")
 
 	// Declare a WaitGroup
 	var wg sync.WaitGroup
@@ -348,14 +304,11 @@ func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 			continue
 		}
 		// Connect to the peer
-		go func() {
-			err := nodehost.Connect(context.Background(), peer)
-			if err != nil {
-				fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Peer: " + peer.ID.String() + err.Error())
-			} else {
-				fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
-			}
-		}()
+		err := nodehost.Connect(context.Background(), peer)
+		if err != nil {
+			fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Connect to Peer: " + peer.ID.String() + err.Error())
+		}
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Connected to Peer: " + peer.ID.String())
 	}
 }
 
@@ -375,6 +328,8 @@ func generateCID(namestring string) cid.Cid {
 	mulhash, err := multihash.FromB58String(string(b58string))
 	if err != nil {
 		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Failed to Generate Service CID! " + err.Error())
+	} else {
+		fmt.Println(purple + "[p2p.go]" + " [" + time.Now().Format("15:04:05") + "]" + reset + " Generated Service CID.")
 	}
 
 	// Generate a CID from the Multihash
@@ -392,7 +347,7 @@ func (p2p *P2P) AllNodeAddr() []string {
 	return addrs
 }
 
-// Get bootstrap peers
-func (p2p *P2P) BootstrapPeers() []peer.AddrInfo {
-	return dht.GetDefaultBootstrapPeerAddrInfos()
+func (p2p *P2P) GetPeerStore() []peer.ID {
+	peers := p2p.Host.Peerstore().Peers()
+	return peers
 }

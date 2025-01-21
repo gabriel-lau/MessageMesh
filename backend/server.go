@@ -15,11 +15,6 @@ const (
 	red    = "\033[31m"
 )
 
-type Network struct {
-	P2p      *P2P
-	ChatRoom *ChatRoom
-}
-
 func (network *Network) ConnectToNetwork() {
 	fmt.Println(blue + "[server.go]" + "[" + time.Now().Format("15:04:05") + "]" + reset + " The PeerChat Application is starting.")
 	fmt.Println(blue + "[server.go]" + "[" + time.Now().Format("15:04:05") + "]" + reset + " This may take upto 30 seconds.")
@@ -48,6 +43,8 @@ func (network *Network) ConnectToNetwork() {
 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" My Multiaddress: %s\n", network.P2p.AllNodeAddr())
 
 	go network.starteventhandler()
+
+	go StartRaft(network)
 }
 
 func (network *Network) starteventhandler() {
@@ -77,6 +74,10 @@ func (network *Network) starteventhandler() {
 
 		// case <-refreshticker.C:
 		// 	// Refresh the list of peers in the chat room periodically
+		// 	peerlist := network.ChatRoom.PeerList()
+		// 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Peers: %s\n", peerlist)
+		// 	peerstoreList := network.P2p.Host.Peerstore().Peers()
+		// 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Peerstore: %s\n", peerstoreList)
 
 		case <-network.ChatRoom.psctx.Done():
 			// End the event loop

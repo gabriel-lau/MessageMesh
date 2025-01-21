@@ -2,7 +2,6 @@ package main
 
 import (
 	backend "MessageMesh/backend"
-	models "MessageMesh/backend/models"
 	"context"
 	"fmt"
 	"time"
@@ -39,14 +38,16 @@ func (a *App) startup(ctx context.Context) {
 		refreshticker := time.NewTicker(time.Second)
 		defer refreshticker.Stop()
 
-		for {
-			select {
-			case msg := <-a.network.ChatRoom.Inbound:
-				runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
-				fmt.Printf(blue+"[app.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
-				time.Sleep(1 * time.Second)
-			case <-refreshticker.C:
-				runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
+		if GetEnvVar("HEADELESS") == "false" {
+			for {
+				select {
+				case msg := <-a.network.ChatRoom.Inbound:
+					runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
+					fmt.Printf(blue+"[app.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg.Message)
+					time.Sleep(1 * time.Second)
+				case <-refreshticker.C:
+					runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
+				}
 			}
 		}
 	}()
@@ -59,12 +60,5 @@ func (a *App) Greet(name string) string {
 
 // CHATCOMPONET
 func (a *App) SendMessage(message string) {
-	newMessage := models.Message{
-		Sender:    "test",
-		Receiver:  "test",
-		Message:   message,
-		Timestamp: "test",
-	}
-
-	a.network.SendMessage(newMessage.Message)
+	a.network.SendMessage(message)
 }

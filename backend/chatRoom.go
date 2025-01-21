@@ -1,51 +1,16 @@
 package backend
 
 import (
+	"MessageMesh/backend/models"
 	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 // A structure that represents a PubSub Chat Room
-type ChatRoom struct {
-	// Represents the P2P Host for the ChatRoom
-	Host *P2P
-
-	// Represents the channel of incoming messages
-	Inbound chan chatmessage
-	// Represents the channel of outgoing messages
-	Outbound chan string
-	// Represents the channel of chat log messages
-	Logs chan chatlog
-
-	// Represents the name of the chat room
-	RoomName string
-	// Represent the name of the user in the chat room
-	UserName string
-	// Represents the host ID of the peer
-	selfid peer.ID
-
-	// Represents the chat room lifecycle context
-	psctx context.Context
-	// Represents the chat room lifecycle cancellation function
-	pscancel context.CancelFunc
-	// Represents the PubSub Topic of the ChatRoom
-	pstopic *pubsub.Topic
-	// Represents the PubSub Subscription for the topic
-	psub *pubsub.Subscription
-}
-
-// A structure that represents a chat message
-type chatmessage struct {
-	Message    string `json:"message"`
-	SenderID   string `json:"senderid"`
-	SenderName string `json:"sendername"`
-}
-
 // A structure that represents a chat log
 type chatlog struct {
 	logprefix string
@@ -79,9 +44,7 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 
 	// Create a ChatRoom object
 	chatroom := &ChatRoom{
-		Host: p2phost,
-
-		Inbound:  make(chan chatmessage),
+		Inbound:  make(chan models.Message),
 		Outbound: make(chan string),
 		Logs:     make(chan chatlog),
 
@@ -117,10 +80,11 @@ func (cr *ChatRoom) PubLoop() {
 
 		case message := <-cr.Outbound:
 			// Create a ChatMessage
-			m := chatmessage{
-				Message:    message,
-				SenderID:   cr.selfid.String(),
-				SenderName: cr.UserName,
+			m := models.Message{
+				Sender:    cr.selfid.Pretty(),
+				Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
+				Message:   message,
+				Timestamp: time.Now().Format("2006-01-02 15:04:05"),
 			}
 
 			// Marshal the ChatMessage into a JSON
@@ -130,7 +94,7 @@ func (cr *ChatRoom) PubLoop() {
 				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not marshal JSON")
 				continue
 			}
-			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
+			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
 
 			// Publish the message to the topic
 			err = cr.pstopic.Publish(cr.psctx, messagebytes)
@@ -139,7 +103,7 @@ func (cr *ChatRoom) PubLoop() {
 				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not publish to topic")
 				continue
 			}
-			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message published")
+			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message published")
 		}
 	}
 }
@@ -175,15 +139,17 @@ func (cr *ChatRoom) SubLoop() {
 			}
 
 			// Declare a ChatMessage
-			cm := &chatmessage{}
+			cm := &models.Message{}
 			// Unmarshal the message data into a ChatMessage
 			err = json.Unmarshal(message.Data, cm)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "could not unmarshal JSON"}
-				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not unmarshal JSON")
+				// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not unmarshal JSON")
 				continue
 			}
-			fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
+			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
+			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sender: " + cm.Sender)
+			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Receiver: " + cm.Receiver)
 
 			// Send the ChatMessage into the message queue
 			cr.Inbound <- *cm
@@ -207,11 +173,6 @@ func (cr *ChatRoom) Exit() {
 	cr.psub.Cancel()
 	// Close the topic handler
 	cr.pstopic.Close()
-}
-
-// A method of ChatRoom that updates the chat user name
-func (cr *ChatRoom) UpdateUser(username string) {
-	cr.UserName = username
 }
 
 // A method of ChatRoom that returns the self peer ID
