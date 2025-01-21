@@ -10,8 +10,8 @@ This is a desktop messaging app that uses a peer-to-peer network to send message
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 
 ### Libraries
-- (Wails)[https://wails.io/]
-- (Libp2p)[https://libp2p.io/]
-- (Bbolt)[https://github.com/etcd-io/bbolt]
-- (Hashicorp Raft)[https://github.com/hashicorp/raft]
-- (Tailwind CSS)[https://tailwindcss.com/]
+- [Wails](https://wails.io/)
+- [Libp2p](https://libp2p.io/)
+- [Bbolt](https://github.com/etcd-io/bbolt)
+- [Hashicorp Raft](https://github.com/hashicorp/raft)
+- [Tailwind CSS](https://tailwindcss.com/)
