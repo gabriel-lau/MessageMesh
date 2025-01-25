@@ -50,7 +50,7 @@ func StartRaft(network *Network) {
 	// --
 
 	// -- Create LibP2P transports Raft
-	transport, err := libp2praft.NewLibp2pTransport(network.P2p.Host, 2*time.Second)
+	transport, err := libp2praft.NewLibp2pTransport(network.P2p.Host, 3*time.Second)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -175,7 +175,7 @@ func getState(c *libp2praft.Consensus) {
 
 func waitForLeader(r *raft.Raft) {
 	obsCh := make(chan raft.Observation, 1)
-	observer := raft.NewObserver(obsCh, true, nil)
+	observer := raft.NewObserver(obsCh, false, nil)
 	r.RegisterObserver(observer)
 	defer r.DeregisterObserver(observer)
 
