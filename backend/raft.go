@@ -101,7 +101,20 @@ func StartRaft(network *Network) {
 	waitForLeader(raft)
 
 	go func() {
+		refreshticker := time.NewTicker(time.Second)
+		defer refreshticker.Stop()
 		for {
+			select {
+			case <-raftconsensus.Subscribe():
+				newState, _ := raftconsensus.GetCurrentState()
+				fmt.Println("New state is: ", newState.(*raftState).Now)
+
+			case <-raft.LeaderCh():
+				fmt.Println("Leader changed")
+
+			case <-refreshticker.C:
+				fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
+			}
 			if actor.IsLeader() {
 				fmt.Println("I am the leader")
 				fmt.Println("Raft State: " + raft.State().String())
@@ -114,17 +127,6 @@ func StartRaft(network *Network) {
 				fmt.Println("Raft State: " + raft.State().String())
 				fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
 				getState(raftconsensus)
-			}
-			time.Sleep(5 * time.Second)
-		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case <-raftconsensus.Subscribe():
-				newState, _ := raftconsensus.GetCurrentState()
-				fmt.Println("New state is: ", newState.(*raftState).Now)
 			}
 		}
 	}()
