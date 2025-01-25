@@ -115,18 +115,7 @@ func StartRaft(network *Network) {
 
 			case <-refreshticker.C:
 				fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
-				peerList := network.ChatRoom.PeerList()
-				for _, pid := range peerList {
-					raftServer := raft.Server{
-						Suffrage: raft.Voter,
-						ID:       raft.ServerID(pid.String()),
-						Address:  raft.ServerAddress(pid.String()),
-					}
-					if slices.Contains(servers, raftServer) {
-						continue
-					}
-					raftInstance.AddVoter(raftServer.ID, raftServer.Address, 0, 0)
-				}
+				updateConnectedServers(network, raftInstance, servers)
 
 				if actor.IsLeader() {
 					fmt.Println("I am the leader")
@@ -210,15 +199,17 @@ func waitForLeader(r *raft.Raft) {
 	}
 }
 
-// func AppendServer(network *Network, pid string) {
-// 	// -- Create Raft servers configuration
-// 	server := raft.Server{
-// 		Suffrage: raft.Voter,
-// 		ID:       raft.ServerID(pid),
-// 		Address:  raft.ServerAddress(pid),
-// 	}
-
-// 	serverConfig := raft.Configuration{
-// 		Servers: []raft.Server{server},
-// 	}
-// }
+func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
+	peerList := network.ChatRoom.PeerList()
+	for _, pid := range peerList {
+		raftServer := raft.Server{
+			Suffrage: raft.Voter,
+			ID:       raft.ServerID(pid.String()),
+			Address:  raft.ServerAddress(pid.String()),
+		}
+		if slices.Contains(servers, raftServer) {
+			continue
+		}
+		raftInstance.AddVoter(raftServer.ID, raftServer.Address, 0, 0)
+	}
+}
