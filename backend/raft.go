@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/hashicorp/raft"
@@ -90,15 +91,15 @@ func StartRaft(network *Network) {
 		fmt.Println("Already initialized!!")
 	}
 
-	raft, err := raft.NewRaft(config, raftconsensus.FSM(), logStore, logStore, snapshots, transport)
+	raftInstance, err := raft.NewRaft(config, raftconsensus.FSM(), logStore, logStore, snapshots, transport)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	actor := libp2praft.NewActor(raft)
+	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
 
-	waitForLeader(raft)
+	waitForLeader(raftInstance)
 
 	go func() {
 		refreshticker := time.NewTicker(time.Second)
@@ -109,22 +110,35 @@ func StartRaft(network *Network) {
 				newState, _ := raftconsensus.GetCurrentState()
 				fmt.Println("New state is: ", newState.(*raftState).Now)
 
-			case <-raft.LeaderCh():
+			case <-raftInstance.LeaderCh():
 				fmt.Println("Leader changed")
 
 			case <-refreshticker.C:
 				fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
+				peerList := network.ChatRoom.PeerList()
+				for _, pid := range peerList {
+					raftServer := raft.Server{
+						Suffrage: raft.Voter,
+						ID:       raft.ServerID(pid.String()),
+						Address:  raft.ServerAddress(pid.String()),
+					}
+					if slices.Contains(servers, raftServer) {
+						continue
+					}
+					raftInstance.AddVoter(raftServer.ID, raftServer.Address, 0, 0)
+				}
+
 				if actor.IsLeader() {
 					fmt.Println("I am the leader")
-					fmt.Println("Raft State: " + raft.State().String())
-					fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
+					fmt.Println("Raft State: " + raftInstance.State().String())
+					fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
 					updateState(raftconsensus)
 					getState(raftconsensus)
 				} else {
 					fmt.Println("I am not the leader")
-					fmt.Println("Leader is: ", raft.Leader())
-					fmt.Println("Raft State: " + raft.State().String())
-					fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
+					fmt.Println("Leader is: ", raftInstance.Leader())
+					fmt.Println("Raft State: " + raftInstance.State().String())
+					fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
 					getState(raftconsensus)
 				}
 			}
