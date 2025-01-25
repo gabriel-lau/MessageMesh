@@ -114,23 +114,22 @@ func StartRaft(network *Network) {
 
 			case <-refreshticker.C:
 				fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
-			}
-			if actor.IsLeader() {
-				fmt.Println("I am the leader")
-				fmt.Println("Raft State: " + raft.State().String())
-				fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
-				updateState(raftconsensus)
-				getState(raftconsensus)
-			} else {
-				fmt.Println("I am not the leader")
-				fmt.Println("Leader is: ", raft.Leader())
-				fmt.Println("Raft State: " + raft.State().String())
-				fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
-				getState(raftconsensus)
+				if actor.IsLeader() {
+					fmt.Println("I am the leader")
+					fmt.Println("Raft State: " + raft.State().String())
+					fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
+					updateState(raftconsensus)
+					getState(raftconsensus)
+				} else {
+					fmt.Println("I am not the leader")
+					fmt.Println("Leader is: ", raft.Leader())
+					fmt.Println("Raft State: " + raft.State().String())
+					fmt.Println(("Number of peers: "), raft.Stats()["num_peers"])
+					getState(raftconsensus)
+				}
 			}
 		}
 	}()
-
 }
 
 func updateState(c *libp2praft.Consensus) {
