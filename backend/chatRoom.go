@@ -2,6 +2,7 @@ package backend
 
 import (
 	"MessageMesh/backend/models"
+	"MessageMesh/debug"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,19 +27,19 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	topic, err := p2phost.PubSub.Join("messagemesh")
 	// Check the error
 	if err != nil {
-		fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not join the chat room")
+		debug.Log("err", "Could not join the chat room")
 		return nil, err
 	}
-	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Joined the chat room")
+	debug.Log("chatRoom", "Joined the chat room")
 
 	// Subscribe to the PubSub topic
 	sub, err := topic.Subscribe()
 	// Check the error
 	if err != nil {
-		fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not subscribe to the chat room")
+		debug.Log("err", "Could not subscribe to the chat room")
 		return nil, err
 	}
-	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscribed to the chat room")
+	debug.Log("chatRoom", "Subscribed to the chat room")
 
 	// Create cancellable context
 	pubsubctx, cancel := context.WithCancel(context.Background())
@@ -63,15 +64,15 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 
 	// Start the subscribe loop
 	go chatroom.SubLoop()
-	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "SubLoop started")
+	debug.Log("chatRoom", "SubLoop started")
 
 	// Start the publish loop
 	go chatroom.PubLoop()
-	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PubLoop started")
+	debug.Log("chatRoom", "PubLoop started")
 
 	// Start the peer joined loop
 	go chatroom.PeerJoinedLoop()
-	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PeerJoinedLoop started")
+	debug.Log("chatRoom", "PeerJoinedLoop started")
 
 	// Return the chatroom
 	return chatroom, nil
@@ -98,7 +99,7 @@ func (cr *ChatRoom) PubLoop() {
 			messagebytes, err := json.Marshal(m)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not marshal JSON"}
-				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not marshal JSON")
+				debug.Log("err", "Could not marshal JSON")
 				continue
 			}
 			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
@@ -107,7 +108,7 @@ func (cr *ChatRoom) PubLoop() {
 			err = cr.pstopic.Publish(cr.psctx, messagebytes)
 			if err != nil {
 				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not publish to topic"}
-				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not publish to topic")
+				debug.Log("err", "Could not publish to topic")
 				continue
 			}
 			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message published")
@@ -133,16 +134,16 @@ func (cr *ChatRoom) SubLoop() {
 				// Close the messages queue (subscription has closed)
 				close(cr.Inbound)
 				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "subscription has closed"}
-				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Subscription has closed")
+				debug.Log("err", "Subscription has closed")
 				return
 			}
 
 			// Check if message is from self
 			if message.ReceivedFrom == cr.selfid {
-				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from self")
+				debug.Log("chatRoom", "Sub Message from self")
 				continue
 			} else {
-				fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message from other peer")
+				debug.Log("chatRoom", "Sub Message from other peer")
 			}
 
 			// Declare a ChatMessage
@@ -168,25 +169,25 @@ func (cr *ChatRoom) PeerJoinedLoop() {
 	// Get the event handler for the topic
 	evts, err := cr.pstopic.EventHandler()
 	if err != nil {
-		fmt.Println(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Failed to get event handler:", err)
+		debug.Log("err", fmt.Sprintf("Failed to get event handler: %s", err))
 		return
 	}
 
 	for {
 		peerEvent, err := evts.NextPeerEvent(context.Background())
 		if err != nil {
-			fmt.Println(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Failed to get next peer event:", err)
+			debug.Log("err", fmt.Sprintf("Failed to get next peer event: %s", err))
 			continue
 		}
 
 		switch peerEvent.Type {
 		case pubsub.PeerJoin: // PeerJoin event
-			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer joined: %s\n", peerEvent.Peer)
+			debug.Log("chatRoom", fmt.Sprintf("Peer joined: %s", peerEvent.Peer))
 			cr.PeerJoin <- peerEvent.Peer
 			// raftInstance.AddVoter(raft.ServerID(peerEvent.Peer.String()), raft.ServerAddress(peerEvent.Peer.String()), 0, 0)
 
 		case pubsub.PeerLeave: // PeerLeave event
-			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer left: %s\n", peerEvent.Peer)
+			debug.Log("chatRoom", fmt.Sprintf("Peer left: %s", peerEvent.Peer))
 			cr.PeerLeave <- peerEvent.Peer
 			// raftInstance.RemoveServer(raft.ServerID(peerEvent.Peer.String()), 0, 0)
 		}

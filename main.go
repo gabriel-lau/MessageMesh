@@ -1,9 +1,9 @@
 package main
 
 import (
+	debug "MessageMesh/debug"
 	"context"
 	"embed"
-	"fmt"
 	"os"
 	"time"
 
@@ -24,7 +24,7 @@ const (
 func main() {
 
 	if GetEnvVar("HEADLESS") == "true" {
-		fmt.Println(yellow + "[main.go]" + reset + " Running in headless mode")
+		debug.Log("main", "Running in headless mode")
 		app := NewApp()
 		ctx := context.Background()
 		app.startup(ctx)
@@ -34,7 +34,7 @@ func main() {
 		}
 	}
 
-	fmt.Println(yellow + "[main.go]" + reset + " Running in GUI mode")
+	debug.Log("main", "Running in GUI mode")
 
 	// Create an instance of the app structure
 	app := NewApp()
@@ -55,14 +55,14 @@ func main() {
 	})
 
 	if err != nil {
-		println("Error:", err.Error())
+		debug.Log("error", err.Error())
 	}
 }
 
 func GetEnvVar(key string) string {
 	err := godotenv.Load(".env")
 	if err != nil {
-		fmt.Println(yellow + "[main.go]" + reset + "Error loading .env file")
+		debug.Log("error", "Error loading .env file")
 	}
 	return os.Getenv(key)
 }
