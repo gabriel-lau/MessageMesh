@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/raft"
 	consensus "github.com/libp2p/go-libp2p-consensus"
+	"github.com/libp2p/go-libp2p-core/peer"
 	libp2praft "github.com/libp2p/go-libp2p-raft"
 )
 
@@ -211,5 +212,12 @@ func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers [
 			continue
 		}
 		raftInstance.AddVoter(raftServer.ID, raftServer.Address, 0, 0)
+	}
+
+	for _, server := range servers {
+		if slices.Contains(peerList, peer.ID(server.ID)) {
+			continue
+		}
+		raftInstance.RemoveServer(server.ID, 0, 0)
 	}
 }
