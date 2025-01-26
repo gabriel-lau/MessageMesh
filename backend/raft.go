@@ -116,7 +116,7 @@ func StartRaft(network *Network) {
 
 			case <-refreshticker.C:
 				fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
-				updateConnectedServers(network, raftInstance, servers)
+				updateConnectedServers(network, raftInstance)
 
 				if actor.IsLeader() {
 					fmt.Println("I am the leader")
@@ -200,9 +200,12 @@ func waitForLeader(r *raft.Raft) {
 	}
 }
 
-func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
+func updateConnectedServers(network *Network, raftInstance *raft.Raft) {
 	peerList := network.ChatRoom.PeerList()
 	peerList = append(peerList, network.P2p.Host.ID())
+
+	servers := raftInstance.GetConfiguration().Configuration().Servers
+
 	serversList := make([]peer.ID, len(servers))
 	for i, server := range servers {
 		serversList[i] = peer.ID(server.ID)
@@ -210,6 +213,8 @@ func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers [
 	slices.Sort(peerList)
 	slices.Sort(serversList)
 
+	fmt.Println("Peer List: ", peerList)
+	fmt.Println("Servers List: ", serversList)
 	peerListCount := 0
 	serversListCount := 0
 	for peerListCount < len(peerList) && serversListCount < len(serversList) {
@@ -218,10 +223,12 @@ func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers [
 			serversListCount++
 		} else if peerList[peerListCount] < serversList[serversListCount] {
 			// Add peer to Raft
+			fmt.Println("Adding peer: ", peerList[peerListCount])
 			raftInstance.AddVoter(raft.ServerID(peerList[peerListCount].String()), raft.ServerAddress(peerList[peerListCount].String()), 0, 0)
 			peerListCount++
 		} else {
 			// Remove peer from Raft
+			fmt.Println("Removing peer: ", serversList[serversListCount])
 			raftInstance.RemoveServer(raft.ServerID(serversList[serversListCount].String()), 0, 0)
 			serversListCount++
 		}
