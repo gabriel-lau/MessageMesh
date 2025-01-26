@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
 // A structure that represents a PubSub Chat Room
@@ -66,15 +66,6 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	// Start the publish loop
 	go chatroom.PubLoop()
 	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PubLoop started")
-
-	p2phost.Host.Network().Notify(&network.NotifyBundle{
-		ConnectedF: func(net network.Network, conn network.Conn) {
-			fmt.Printf("Connected to peer: %s\n", conn.RemotePeer())
-		},
-		DisconnectedF: func(net network.Network, conn network.Conn) {
-			fmt.Printf("Disconnected from peer: %s\n", conn.RemotePeer())
-		},
-	})
 
 	// Return the chatroom
 	return chatroom, nil
@@ -168,9 +159,27 @@ func (cr *ChatRoom) SubLoop() {
 }
 
 func (cr *ChatRoom) PeerJoinedLoop() {
-	for {
+	// Get the event handler for the topic
+	evts, err := cr.pstopic.EventHandler()
+	if err != nil {
+		fmt.Println(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Failed to get event handler:", err)
+		return
+	}
 
-		select {}
+	for {
+		peerEvent, err := evts.NextPeerEvent(context.Background())
+		if err != nil {
+			fmt.Println(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Failed to get next peer event:", err)
+			continue
+		}
+
+		switch peerEvent.Type {
+		case pubsub.PeerJoin: // PeerJoin event
+			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer joined: %s\n", peerEvent.Peer)
+
+		case pubsub.PeerLeave: // PeerLeave event
+			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer left: %s\n", peerEvent.Peer)
+		}
 	}
 }
 
