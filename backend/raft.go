@@ -202,6 +202,7 @@ func waitForLeader(r *raft.Raft) {
 
 func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
 	peerList := network.ChatRoom.PeerList()
+	peerList = append(peerList, network.P2p.Host.ID())
 	for _, pid := range peerList {
 		raftServer := raft.Server{
 			Suffrage: raft.Voter,
