@@ -218,6 +218,7 @@ func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers [
 		if slices.Contains(peerList, peer.ID(server.ID)) {
 			continue
 		}
+		fmt.Println("Removing server: ", server)
 		raftInstance.RemoveServer(server.ID, 0, 0)
 	}
 }
