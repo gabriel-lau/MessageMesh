@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/raft"
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
@@ -158,7 +159,7 @@ func (cr *ChatRoom) SubLoop() {
 	}
 }
 
-func (cr *ChatRoom) PeerJoinedLoop() {
+func (cr *ChatRoom) PeerJoinedLoop(raftInstance *raft.Raft) {
 	// Get the event handler for the topic
 	evts, err := cr.pstopic.EventHandler()
 	if err != nil {
@@ -176,9 +177,11 @@ func (cr *ChatRoom) PeerJoinedLoop() {
 		switch peerEvent.Type {
 		case pubsub.PeerJoin: // PeerJoin event
 			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer joined: %s\n", peerEvent.Peer)
+			raftInstance.AddVoter(raft.ServerID(peerEvent.Peer.String()), raft.ServerAddress(peerEvent.Peer.String()), 0, 0)
 
 		case pubsub.PeerLeave: // PeerLeave event
 			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer left: %s\n", peerEvent.Peer)
+			raftInstance.RemoveServer(raft.ServerID(peerEvent.Peer.String()), 0, 0)
 		}
 	}
 }

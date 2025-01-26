@@ -133,7 +133,7 @@ func StartRaft(network *Network) {
 		}
 	}()
 
-	go network.ChatRoom.PeerJoinedLoop()
+	go network.ChatRoom.PeerJoinedLoop(raftInstance)
 }
 
 func updateState(c *libp2praft.Consensus) {
