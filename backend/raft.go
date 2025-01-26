@@ -203,24 +203,27 @@ func waitForLeader(r *raft.Raft) {
 func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
 	peerList := network.ChatRoom.PeerList()
 	peerList = append(peerList, network.P2p.Host.ID())
-	for _, pid := range peerList {
-		raftServer := raft.Server{
-			Suffrage: raft.Voter,
-			ID:       raft.ServerID(pid.String()),
-			Address:  raft.ServerAddress(pid.String()),
-		}
-		if slices.Contains(servers, raftServer) {
-			continue
-		}
-		raftInstance.AddVoter(raftServer.ID, raftServer.Address, 0, 0)
+	serversList := make([]peer.ID, len(servers))
+	for i, server := range servers {
+		serversList[i] = peer.ID(server.ID)
 	}
+	slices.Sort(peerList)
+	slices.Sort(serversList)
 
-	for _, server := range servers {
-		if slices.Contains(peerList, peer.ID(string(server.ID))) {
-			continue
+	peerListCount := 0
+	serversListCount := 0
+	for peerListCount < len(peerList) && serversListCount < len(serversList) {
+		if peerList[peerListCount] == serversList[serversListCount] {
+			peerListCount++
+			serversListCount++
+		} else if peerList[peerListCount] < serversList[serversListCount] {
+			// Add peer to Raft
+			raftInstance.AddVoter(raft.ServerID(peerList[peerListCount].String()), raft.ServerAddress(peerList[peerListCount].String()), 0, 0)
+			peerListCount++
+		} else {
+			// Remove peer from Raft
+			raftInstance.RemoveServer(raft.ServerID(serversList[serversListCount].String()), 0, 0)
+			serversListCount++
 		}
-		fmt.Println("Removing server: ", server.ID)
-		fmt.Println("peerlist: ", peerList)
-		raftInstance.RemoveServer(server.ID, 0, 0)
 	}
 }
