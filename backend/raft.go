@@ -98,42 +98,11 @@ func StartRaft(network *Network) {
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
 
-	waitForLeader(raftInstance)
+	// waitForLeader(raftInstance)
 
-	go func() {
-		refreshticker := time.NewTicker(time.Second)
-		defer refreshticker.Stop()
-		for {
-			select {
-			case <-raftconsensus.Subscribe():
-				newState, _ := raftconsensus.GetCurrentState()
-				fmt.Println("New state is: ", newState.(*raftState).Now)
+	go networkLoop(network, raftInstance)
 
-			case <-raftInstance.LeaderCh():
-				fmt.Println("Leader changed")
-
-			case <-refreshticker.C:
-				fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
-				updateConnectedServers(network, raftInstance, servers)
-
-				if actor.IsLeader() {
-					fmt.Println("I am the leader")
-					fmt.Println("Raft State: " + raftInstance.State().String())
-					fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
-					updateState(raftconsensus)
-					getState(raftconsensus)
-				} else {
-					fmt.Println("I am not the leader")
-					fmt.Println("Leader is: ", raftInstance.Leader())
-					fmt.Println("Raft State: " + raftInstance.State().String())
-					fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
-					getState(raftconsensus)
-				}
-			}
-		}
-	}()
-
-	go updateConnectedServers(network, raftInstance, servers)
+	go blockchainLoop(network, raftInstance, raftconsensus, actor)
 }
 
 func updateState(c *libp2praft.Consensus) {
@@ -200,7 +169,7 @@ func waitForLeader(r *raft.Raft) {
 	}
 }
 
-func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
+func networkLoop(network *Network, raftInstance *raft.Raft) {
 	// Listen for peer joins and leaves
 	for {
 		select {
@@ -210,6 +179,40 @@ func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers [
 		case peer := <-network.ChatRoom.PeerLeave:
 			fmt.Println("Peer left: ", peer)
 			raftInstance.RemoveServer(raft.ServerID(peer.String()), 0, 0)
+			if raftInstance.Leader() == raft.ServerAddress(peer.String()) {
+			}
+		}
+	}
+}
+
+func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
+	refreshticker := time.NewTicker(time.Second)
+	defer refreshticker.Stop()
+	for {
+		select {
+		case <-raftconsensus.Subscribe():
+			newState, _ := raftconsensus.GetCurrentState()
+			fmt.Println("New state is: ", newState.(*raftState).Now)
+
+		case <-raftInstance.LeaderCh():
+			fmt.Println("Leader changed")
+
+		case <-refreshticker.C:
+			fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
+
+			if actor.IsLeader() {
+				fmt.Println("I am the leader")
+				fmt.Println("Raft State: " + raftInstance.State().String())
+				fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
+				updateState(raftconsensus)
+				getState(raftconsensus)
+			} else {
+				fmt.Println("I am not the leader")
+				fmt.Println("Leader is: ", raftInstance.Leader())
+				fmt.Println("Raft State: " + raftInstance.State().String())
+				fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
+				getState(raftconsensus)
+			}
 		}
 	}
 }
