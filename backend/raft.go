@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"slices"
 	"time"
 
 	"github.com/hashicorp/raft"
 	consensus "github.com/libp2p/go-libp2p-consensus"
-	"github.com/libp2p/go-libp2p-core/peer"
 	libp2praft "github.com/libp2p/go-libp2p-raft"
 )
 
@@ -134,6 +132,8 @@ func StartRaft(network *Network) {
 			}
 		}
 	}()
+
+	go network.ChatRoom.PeerJoinedLoop()
 }
 
 func updateState(c *libp2praft.Consensus) {
@@ -201,34 +201,5 @@ func waitForLeader(r *raft.Raft) {
 }
 
 func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
-	peerList := network.ChatRoom.PeerList()
-	peerList = append(peerList, network.P2p.Host.ID())
 
-	serversList := make([]peer.ID, len(servers))
-	for i, server := range servers {
-		serversList[i] = peer.ID(string(server.ID))
-	}
-	slices.Sort(peerList)
-	slices.Sort(serversList)
-
-	fmt.Println("Peer List: ", peerList)
-	fmt.Println("Servers List: ", serversList)
-	peerListCount := 0
-	serversListCount := 0
-	for peerListCount < len(peerList) && serversListCount < len(serversList) {
-		if peerList[peerListCount] == serversList[serversListCount] {
-			peerListCount++
-			serversListCount++
-		} else if peerList[peerListCount] < serversList[serversListCount] {
-			// Add peer to Raft
-			fmt.Println("Adding peer: ", peerList[peerListCount])
-			raftInstance.AddVoter(raft.ServerID(peerList[peerListCount].String()), raft.ServerAddress(peerList[peerListCount].String()), 0, 0)
-			peerListCount++
-		} else {
-			// Remove peer from Raft
-			fmt.Println("Removing peer: ", serversList[serversListCount])
-			raftInstance.RemoveServer(raft.ServerID(serversList[serversListCount].String()), 0, 0)
-			serversListCount++
-		}
-	}
 }
