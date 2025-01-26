@@ -67,6 +67,10 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	go chatroom.PubLoop()
 	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PubLoop started")
 
+	// Start the peer joined loop
+	go chatroom.PeerJoinedLoop()
+	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PeerJoinedLoop started")
+
 	// Return the chatroom
 	return chatroom, nil
 }
