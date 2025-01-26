@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
@@ -65,6 +66,15 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	// Start the publish loop
 	go chatroom.PubLoop()
 	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PubLoop started")
+
+	p2phost.Host.Network().Notify(&network.NotifyBundle{
+		ConnectedF: func(net network.Network, conn network.Conn) {
+			fmt.Printf("Connected to peer: %s\n", conn.RemotePeer())
+		},
+		DisconnectedF: func(net network.Network, conn network.Conn) {
+			fmt.Printf("Disconnected from peer: %s\n", conn.RemotePeer())
+		},
+	})
 
 	// Return the chatroom
 	return chatroom, nil
@@ -154,6 +164,13 @@ func (cr *ChatRoom) SubLoop() {
 			// Send the ChatMessage into the message queue
 			cr.Inbound <- *cm
 		}
+	}
+}
+
+func (cr *ChatRoom) PeerJoinedLoop() {
+	for {
+
+		select {}
 	}
 }
 

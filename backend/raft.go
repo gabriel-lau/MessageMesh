@@ -206,7 +206,7 @@ func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers [
 
 	serversList := make([]peer.ID, len(servers))
 	for i, server := range servers {
-		serversList[i] = peer.ID(server.ID)
+		serversList[i] = peer.ID(string(server.ID))
 	}
 	slices.Sort(peerList)
 	slices.Sort(serversList)
