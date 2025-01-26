@@ -116,7 +116,7 @@ func StartRaft(network *Network) {
 
 			case <-refreshticker.C:
 				fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
-				updateConnectedServers(network, raftInstance)
+				updateConnectedServers(network, raftInstance, servers)
 
 				if actor.IsLeader() {
 					fmt.Println("I am the leader")
@@ -200,11 +200,9 @@ func waitForLeader(r *raft.Raft) {
 	}
 }
 
-func updateConnectedServers(network *Network, raftInstance *raft.Raft) {
+func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
 	peerList := network.ChatRoom.PeerList()
 	peerList = append(peerList, network.P2p.Host.ID())
-
-	servers := raftInstance.GetConfiguration().Configuration().Servers
 
 	serversList := make([]peer.ID, len(servers))
 	for i, server := range servers {
