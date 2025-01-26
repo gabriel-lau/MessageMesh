@@ -25,6 +25,9 @@ type ChatRoom struct {
 	// Represents the channel of chat log messages
 	Logs chan chatlog
 
+	PeerJoin  chan peer.ID
+	PeerLeave chan peer.ID
+
 	// Represents the name of the chat room
 	RoomName string
 	// Represent the name of the user in the chat room

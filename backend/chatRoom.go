@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/raft"
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
@@ -46,9 +45,11 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 
 	// Create a ChatRoom object
 	chatroom := &ChatRoom{
-		Inbound:  make(chan models.Message),
-		Outbound: make(chan string),
-		Logs:     make(chan chatlog),
+		Inbound:   make(chan models.Message),
+		Outbound:  make(chan string),
+		Logs:      make(chan chatlog),
+		PeerJoin:  make(chan peer.ID),
+		PeerLeave: make(chan peer.ID),
 
 		psctx:    pubsubctx,
 		pscancel: cancel,
@@ -67,6 +68,10 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	// Start the publish loop
 	go chatroom.PubLoop()
 	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PubLoop started")
+
+	// Start the peer joined loop
+	go chatroom.PeerJoinedLoop()
+	fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "PeerJoinedLoop started")
 
 	// Return the chatroom
 	return chatroom, nil
@@ -159,7 +164,7 @@ func (cr *ChatRoom) SubLoop() {
 	}
 }
 
-func (cr *ChatRoom) PeerJoinedLoop(raftInstance *raft.Raft) {
+func (cr *ChatRoom) PeerJoinedLoop() {
 	// Get the event handler for the topic
 	evts, err := cr.pstopic.EventHandler()
 	if err != nil {
@@ -177,11 +182,13 @@ func (cr *ChatRoom) PeerJoinedLoop(raftInstance *raft.Raft) {
 		switch peerEvent.Type {
 		case pubsub.PeerJoin: // PeerJoin event
 			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer joined: %s\n", peerEvent.Peer)
-			raftInstance.AddVoter(raft.ServerID(peerEvent.Peer.String()), raft.ServerAddress(peerEvent.Peer.String()), 0, 0)
+			cr.PeerJoin <- peerEvent.Peer
+			// raftInstance.AddVoter(raft.ServerID(peerEvent.Peer.String()), raft.ServerAddress(peerEvent.Peer.String()), 0, 0)
 
 		case pubsub.PeerLeave: // PeerLeave event
 			fmt.Printf(green+"[chatRoom.go]"+" ["+time.Now().Format("15:04:05")+"] "+reset+"Peer left: %s\n", peerEvent.Peer)
-			raftInstance.RemoveServer(raft.ServerID(peerEvent.Peer.String()), 0, 0)
+			cr.PeerLeave <- peerEvent.Peer
+			// raftInstance.RemoveServer(raft.ServerID(peerEvent.Peer.String()), 0, 0)
 		}
 	}
 }

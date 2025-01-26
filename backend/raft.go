@@ -133,7 +133,7 @@ func StartRaft(network *Network) {
 		}
 	}()
 
-	go network.ChatRoom.PeerJoinedLoop(raftInstance)
+	go updateConnectedServers(network, raftInstance, servers)
 }
 
 func updateState(c *libp2praft.Consensus) {
@@ -201,5 +201,15 @@ func waitForLeader(r *raft.Raft) {
 }
 
 func updateConnectedServers(network *Network, raftInstance *raft.Raft, servers []raft.Server) {
-
+	// Listen for peer joins and leaves
+	for {
+		select {
+		case peer := <-network.ChatRoom.PeerJoin:
+			fmt.Println("Peer joined: ", peer)
+			raftInstance.AddVoter(raft.ServerID(peer.String()), raft.ServerAddress(peer.String()), 0, 0)
+		case peer := <-network.ChatRoom.PeerLeave:
+			fmt.Println("Peer left: ", peer)
+			raftInstance.RemoveServer(raft.ServerID(peer.String()), 0, 0)
+		}
+	}
 }
