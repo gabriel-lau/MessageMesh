@@ -7,6 +7,8 @@ import (
 	"io"
 	"time"
 
+	"MessageMesh/backend/models"
+
 	"github.com/hashicorp/raft"
 	consensus "github.com/libp2p/go-libp2p-consensus"
 	libp2praft "github.com/libp2p/go-libp2p-raft"
@@ -17,19 +19,22 @@ type raftState struct {
 }
 
 type raftOP struct {
-	Type         string // "ADD_BLOCK" or other operations
-	Data         string
-	Transactions []Transaction
+	Type    string // "ADD_MESSAGE_BLOCK" or "ADD_ACCOUNT_BLOCK"
+	Message *models.Message
+	Account *models.Account
 }
 
 func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	currentState := state.(*raftState)
 
 	switch o.Type {
-	case "ADD_BLOCK":
-		newBlock := currentState.Blockchain.AddBlock(o.Data, o.Transactions)
-		currentState.Blockchain.Chain = append(currentState.Blockchain.Chain, newBlock)
-		debug.Log("blockchain", fmt.Sprintf("New block added: %d", newBlock.Index))
+	case "ADD_MESSAGE_BLOCK":
+		newBlock := currentState.Blockchain.AddMessageBlock(o.Message)
+		debug.Log("blockchain", fmt.Sprintf("New message block added: %d", newBlock.Index))
+
+	case "ADD_ACCOUNT_BLOCK":
+		newBlock := currentState.Blockchain.AddAccountBlock(o.Account)
+		debug.Log("blockchain", fmt.Sprintf("New account block added: %d", newBlock.Index))
 	}
 
 	return currentState, nil
@@ -133,17 +138,17 @@ func StartRaft(network *Network) {
 // 	}
 // }
 
-func getState(c *libp2praft.Consensus) {
-	state, err := c.GetCurrentState()
-	if err != nil {
-		debug.Log("err", err.Error())
-	}
-	if state == nil {
-		debug.Log("err", "state is nil: commited on a non-leader?")
-		return
-	}
-	debug.Log("raft", fmt.Sprintf("Current state: %s", state.(*raftState).Blockchain.GetLatestBlock().Data))
-}
+// func getState(c *libp2praft.Consensus) {
+// 	state, err := c.GetCurrentState()
+// 	if err != nil {
+// 		debug.Log("err", err.Error())
+// 	}
+// 	if state == nil {
+// 		debug.Log("err", "state is nil: commited on a non-leader?")
+// 		return
+// 	}
+// 	debug.Log("raft", fmt.Sprintf("Current state: %s", state.(*raftState).Blockchain.GetLatestBlock().BlockType))
+// }
 
 func networkLoop(network *Network, raftInstance *raft.Raft) {
 	// Listen for peer joins and leaves
@@ -178,14 +183,16 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		case message := <-network.ChatRoom.Inbound:
 			debug.Log("blockchain", fmt.Sprintf("Received message: %s", message.Message))
 
-			// Only the leader can add blocks
 			if actor.IsLeader() {
-				// Here you would parse the message to get transactions
-				// This is a simplified example
+				// Example of creating a message block
 				op := &raftOP{
-					Type:         "ADD_BLOCK",
-					Data:         message.Message,
-					Transactions: []Transaction{}, // Add actual transactions here
+					Type: "ADD_MESSAGE_BLOCK",
+					Message: &models.Message{
+						Sender:    message.Sender,
+						Receiver:  message.Receiver,
+						Message:   message.Message,
+						Timestamp: time.Now().Format(time.RFC3339),
+					},
 				}
 
 				_, err := raftconsensus.CommitOp(op)
