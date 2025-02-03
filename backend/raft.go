@@ -13,26 +13,41 @@ import (
 )
 
 type raftState struct {
-	Now string
+	Blockchain Blockchain
 }
 
 type raftOP struct {
-	Op string
+	Type         string // "ADD_BLOCK" or other operations
+	Data         string
+	Transactions []Transaction
 }
 
 func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
-	debug.Log("raft", fmt.Sprintf("Applying OP: %s", o.Op))
-	return state, nil
+	currentState := state.(*raftState)
+
+	switch o.Type {
+	case "ADD_BLOCK":
+		newBlock := currentState.Blockchain.AddBlock(o.Data, o.Transactions)
+		currentState.Blockchain.Chain = append(currentState.Blockchain.Chain, newBlock)
+		debug.Log("blockchain", fmt.Sprintf("New block added: %d", newBlock.Index))
+	}
+
+	return currentState, nil
 }
 
 func StartRaft(network *Network) {
+	// Initialize blockchain with genesis block
+	initialState := &raftState{
+		Blockchain: Blockchain{
+			Chain: []Block{CreateGenesisBlock()},
+		},
+	}
+
+	// Create the consensus with blockchain state
+	raftconsensus := libp2praft.NewOpLog(initialState, &raftOP{})
+
 	pids := network.ChatRoom.PeerList()
 	// pids := network.P2p.Host.Peerstore().Peers()
-	// -- Create the consensus with no actor attached
-	raftconsensus := libp2praft.NewOpLog(&raftState{}, &raftOP{})
-	// raftconsensus = libp2praft.NewConsensus(&raftState{"i am not consensuated"})
-	// --
-
 	// -- Create Raft servers configuration
 	pids = append(pids, network.P2p.Host.ID())
 	servers := make([]raft.Server, len(pids))
@@ -106,17 +121,17 @@ func StartRaft(network *Network) {
 	go blockchainLoop(network, raftInstance, raftconsensus, actor)
 }
 
-func updateState(c *libp2praft.Consensus) {
-	loc, _ := time.LoadLocation("UTC")
-	newState := &raftState{Now: time.Now().In(loc).String()}
-	agreedState, err := c.CommitState(newState)
-	if err != nil {
-		fmt.Println(err)
-	}
-	if agreedState == nil {
-		fmt.Println("agreedState is nil: commited on a non-leader?")
-	}
-}
+// func updateState(c *libp2praft.Consensus) {
+// 	loc, _ := time.LoadLocation("UTC")
+// 	newState := &raftState{Now: time.Now().In(loc).String()}
+// 	agreedState, err := c.CommitState(newState)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	if agreedState == nil {
+// 		fmt.Println("agreedState is nil: commited on a non-leader?")
+// 	}
+// }
 
 func getState(c *libp2praft.Consensus) {
 	state, err := c.GetCurrentState()
@@ -127,7 +142,7 @@ func getState(c *libp2praft.Consensus) {
 		debug.Log("err", "state is nil: commited on a non-leader?")
 		return
 	}
-	debug.Log("raft", fmt.Sprintf("Current state: %s", state.(*raftState).Now))
+	debug.Log("raft", fmt.Sprintf("Current state: %s", state.(*raftState).Blockchain.GetLatestBlock().Data))
 }
 
 func networkLoop(network *Network, raftInstance *raft.Raft) {
@@ -147,35 +162,37 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 }
 
 func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
-	// refreshticker := time.NewTicker(time.Second)
-	// defer refreshticker.Stop()
 	for {
 		select {
 		case <-raftconsensus.Subscribe():
 			newState, _ := raftconsensus.GetCurrentState()
-			debug.Log("raft", fmt.Sprintf("New state is: %s", newState.(*raftState).Now))
+			blockchain := newState.(*raftState).Blockchain
+			debug.Log("blockchain", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
 
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
 
 		case <-network.ChatRoom.Outbound:
 			debug.Log("raft", "Outbound message received")
-			// case <-refreshticker.C:
-			// 	fmt.Println("Number of peers in network: ", network.ChatRoom.PeerList())
 
-			// 	if actor.IsLeader() {
-			// 		fmt.Println("I am the leader")
-			// 		fmt.Println("Raft State: " + raftInstance.State().String())
-			// 		fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
-			// 		updateState(raftconsensus)
-			// 		getState(raftconsensus)
-			// 	} else {
-			// 		fmt.Println("I am not the leader")
-			// 		fmt.Println("Leader is: ", raftInstance.Leader())
-			// 		fmt.Println("Raft State: " + raftInstance.State().String())
-			// 		fmt.Println(("Number of peers: "), raftInstance.Stats()["num_peers"])
-			// 		getState(raftconsensus)
-			// 	}
+		case message := <-network.ChatRoom.Inbound:
+			debug.Log("blockchain", fmt.Sprintf("Received message: %s", message.Message))
+
+			// Only the leader can add blocks
+			if actor.IsLeader() {
+				// Here you would parse the message to get transactions
+				// This is a simplified example
+				op := &raftOP{
+					Type:         "ADD_BLOCK",
+					Data:         message.Message,
+					Transactions: []Transaction{}, // Add actual transactions here
+				}
+
+				_, err := raftconsensus.CommitOp(op)
+				if err != nil {
+					debug.Log("err", fmt.Sprintf("Failed to commit block: %s", err))
+				}
+			}
 		}
 	}
 }
