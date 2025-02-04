@@ -156,10 +156,10 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 		select {
 		case peer := <-network.ChatRoom.PeerJoin:
 			debug.Log("raft", fmt.Sprintf("Peer joined: %s", peer))
-			raftInstance.AddVoter(raft.ServerID(peer.String()), raft.ServerAddress(peer.String()), 0, 0)
+			// raftInstance.AddVoter(raft.ServerID(peer.String()), raft.ServerAddress(peer.String()), 0, 0)
 		case peer := <-network.ChatRoom.PeerLeave:
 			debug.Log("raft", fmt.Sprintf("Peer left: %s", peer))
-			raftInstance.RemoveServer(raft.ServerID(peer.String()), 0, 0)
+			// raftInstance.RemoveServer(raft.ServerID(peer.String()), 0, 0)
 			if raftInstance.Leader() == raft.ServerAddress(peer.String()) {
 			}
 		}
