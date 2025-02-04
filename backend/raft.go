@@ -175,31 +175,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			debug.Log("blockchain", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
 			latestBlock := blockchain.GetLatestBlock()
 			debug.Log("blockchain", fmt.Sprintf("Latest block: %s", latestBlock.BlockType))
-			// Print the entire blockchain
-			for i, block := range blockchain.Chain {
-				debug.Log("blockchain", fmt.Sprintf("Block %d:", i))
-				debug.Log("blockchain", fmt.Sprintf("  Type: %s", block.BlockType))
-				debug.Log("blockchain", fmt.Sprintf("  Hash: %s", block.Hash))
-				debug.Log("blockchain", fmt.Sprintf("  PrevHash: %s", block.PrevHash))
-				debug.Log("blockchain", fmt.Sprintf("  Timestamp: %d", block.Timestamp))
 
-				switch block.BlockType {
-				case "message":
-					if msgBlock := blockchain.GetMessageBlock(i); msgBlock != nil {
-						debug.Log("blockchain", fmt.Sprintf("  Message:"))
-						debug.Log("blockchain", fmt.Sprintf("    From: %s", msgBlock.Message.Sender))
-						debug.Log("blockchain", fmt.Sprintf("    To: %s", msgBlock.Message.Receiver))
-						debug.Log("blockchain", fmt.Sprintf("    Content: %s", msgBlock.Message.Message))
-						debug.Log("blockchain", fmt.Sprintf("    Time: %s", msgBlock.Message.Timestamp))
-					}
-				case "account":
-					if accBlock := blockchain.GetAccountBlock(i); accBlock != nil {
-						debug.Log("blockchain", fmt.Sprintf("  Account:"))
-						debug.Log("blockchain", fmt.Sprintf("    Username: %s", accBlock.Account.Username))
-						debug.Log("blockchain", fmt.Sprintf("    PublicKey: %s", accBlock.Account.PublicKey))
-					}
-				}
-			}
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
 
