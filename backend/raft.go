@@ -107,11 +107,15 @@ func StartRaft(network *Network) {
 		debug.Log("err", fmt.Sprintf("Failed to check existing state: %s", err))
 	}
 
-	if !bootstrapped {
-		// Bootstrap cluster first
-		raft.BootstrapCluster(config, logStore, logStore, snapshots, transport, serverConfig)
+	// Only bootstrap if we're the first node (no peers)
+	if !bootstrapped && len(pids) <= 1 {
+		debug.Log("raft", "Bootstrapping new cluster")
+		err := raft.BootstrapCluster(config, logStore, logStore, snapshots, transport, serverConfig)
+		if err != nil {
+			debug.Log("err", fmt.Sprintf("Failed to bootstrap cluster: %s", err))
+		}
 	} else {
-		debug.Log("raft", "Already initialized!")
+		debug.Log("raft", "Joining existing cluster")
 	}
 
 	raftInstance, err := raft.NewRaft(config, raftconsensus.FSM(), logStore, logStore, snapshots, transport)
@@ -130,17 +134,36 @@ func StartRaft(network *Network) {
 }
 
 func networkLoop(network *Network, raftInstance *raft.Raft) {
-	// Listen for peer joins and leaves
 	for {
 		select {
 		case peer := <-network.ChatRoom.PeerJoin:
 			debug.Log("raft", fmt.Sprintf("Peer joined: %s", peer))
-			raftInstance.AddVoter(raft.ServerID(peer.String()), raft.ServerAddress(peer.String()), 0, 0)
+
+			// Only add voter if we are the leader
+			if raftInstance.State() == raft.Leader {
+				future := raftInstance.AddVoter(
+					raft.ServerID(peer.String()),
+					raft.ServerAddress(peer.String()),
+					0,
+					5*time.Second,
+				)
+				if err := future.Error(); err != nil {
+					debug.Log("err", fmt.Sprintf("Failed to add voter: %s", err))
+				}
+			}
 			network.ChatRoom.PeerIDs <- network.ChatRoom.PeerList()
+
 		case peer := <-network.ChatRoom.PeerLeave:
 			debug.Log("raft", fmt.Sprintf("Peer left: %s", peer))
-			raftInstance.RemoveServer(raft.ServerID(peer.String()), 0, 0)
-			if raftInstance.Leader() == raft.ServerAddress(peer.String()) {
+			if raftInstance.State() == raft.Leader {
+				future := raftInstance.RemoveServer(
+					raft.ServerID(peer.String()),
+					0,
+					5*time.Second,
+				)
+				if err := future.Error(); err != nil {
+					debug.Log("err", fmt.Sprintf("Failed to remove server: %s", err))
+				}
 			}
 			network.ChatRoom.PeerIDs <- network.ChatRoom.PeerList()
 		}
