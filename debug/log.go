@@ -15,6 +15,7 @@ func Log(filename string, message string) {
 		"raft":     "\033[92m", // bright green
 		"db":       "\033[94m", // bright blue
 		"err":      "\033[91m", // bright red
+		"reset":    "\033[0m",  // reset
 	}
 	if filename == "error" {
 		fmt.Println(colourMap[filename] + "[" + filename + "] [" + time.Now().Format("15:04:05") + "] " + colourMap["reset"] + message)

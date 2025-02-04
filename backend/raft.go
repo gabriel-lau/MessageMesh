@@ -44,7 +44,7 @@ func StartRaft(network *Network) {
 	// Initialize blockchain with genesis block
 	initialState := &raftState{
 		Blockchain: Blockchain{
-			Chain: []Block{CreateGenesisBlock()},
+			Chain: []*Block{CreateGenesisBlock()},
 		},
 	}
 
@@ -174,7 +174,20 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			blockchain := newState.(*raftState).Blockchain
 			debug.Log("blockchain", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
 			latestBlock := blockchain.GetLatestBlock()
-			debug.Log("blockchain", fmt.Sprintf("Latest block: %s", latestBlock.BlockType))
+
+			// Type assertion to access specific data
+			switch latestBlock.BlockType {
+			case "message":
+				if messageData, ok := latestBlock.Data.(*MessageData); ok {
+					debug.Log("blockchain", fmt.Sprintf("Latest message from: %s", messageData.Message.Sender))
+				}
+			case "account":
+				if accountData, ok := latestBlock.Data.(*AccountData); ok {
+					debug.Log("blockchain", fmt.Sprintf("Latest account: %s", accountData.Account.Username))
+				}
+			default:
+				debug.Log("blockchain", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
+			}
 
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
@@ -186,7 +199,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			debug.Log("blockchain", fmt.Sprintf("Received message: %s", message.Message))
 
 			if actor.IsLeader() {
-				// Example of creating a message block
+				// Create a message block using the new structure
 				op := &raftOP{
 					Type: "ADD_MESSAGE_BLOCK",
 					Message: &models.Message{
