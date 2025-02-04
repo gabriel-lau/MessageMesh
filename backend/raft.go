@@ -126,40 +126,16 @@ func StartRaft(network *Network) {
 	go blockchainLoop(network, raftInstance, raftconsensus, actor)
 }
 
-// func updateState(c *libp2praft.Consensus) {
-// 	loc, _ := time.LoadLocation("UTC")
-// 	newState := &raftState{Now: time.Now().In(loc).String()}
-// 	agreedState, err := c.CommitState(newState)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	if agreedState == nil {
-// 		fmt.Println("agreedState is nil: commited on a non-leader?")
-// 	}
-// }
-
-// func getState(c *libp2praft.Consensus) {
-// 	state, err := c.GetCurrentState()
-// 	if err != nil {
-// 		debug.Log("err", err.Error())
-// 	}
-// 	if state == nil {
-// 		debug.Log("err", "state is nil: commited on a non-leader?")
-// 		return
-// 	}
-// 	debug.Log("raft", fmt.Sprintf("Current state: %s", state.(*raftState).Blockchain.GetLatestBlock().BlockType))
-// }
-
 func networkLoop(network *Network, raftInstance *raft.Raft) {
 	// Listen for peer joins and leaves
 	for {
 		select {
 		case peer := <-network.ChatRoom.PeerJoin:
 			debug.Log("raft", fmt.Sprintf("Peer joined: %s", peer))
-			// raftInstance.AddVoter(raft.ServerID(peer.String()), raft.ServerAddress(peer.String()), 0, 0)
+			raftInstance.AddVoter(raft.ServerID(peer.String()), raft.ServerAddress(peer.String()), 0, 0)
 		case peer := <-network.ChatRoom.PeerLeave:
 			debug.Log("raft", fmt.Sprintf("Peer left: %s", peer))
-			// raftInstance.RemoveServer(raft.ServerID(peer.String()), 0, 0)
+			raftInstance.RemoveServer(raft.ServerID(peer.String()), 0, 0)
 			if raftInstance.Leader() == raft.ServerAddress(peer.String()) {
 			}
 		}

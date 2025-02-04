@@ -16,11 +16,6 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-const (
-	yellow = "\033[33m"
-	reset  = "\033[0m"
-)
-
 func main() {
 
 	if GetEnvVar("HEADLESS") == "true" {
