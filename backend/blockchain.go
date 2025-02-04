@@ -69,6 +69,16 @@ func CreateGenesisBlock() Block {
 	return block
 }
 
+func (bc *Blockchain) GetMessageBlock(index int) *MessageBlock {
+	block := bc.Chain[index]
+	if block.BlockType != "message" {
+		return nil
+	}
+	messageBlock := &MessageBlock{}
+	messageBlock.Block = block
+	return messageBlock
+}
+
 func (bc *Blockchain) AddMessageBlock(message *models.Message) *MessageBlock {
 	prevBlock := bc.Chain[len(bc.Chain)-1]
 	newBlock := &MessageBlock{
@@ -83,6 +93,16 @@ func (bc *Blockchain) AddMessageBlock(message *models.Message) *MessageBlock {
 	newBlock.Hash = newBlock.CalculateHash()
 	bc.Chain = append(bc.Chain, newBlock.Block)
 	return newBlock
+}
+
+func (bc *Blockchain) GetAccountBlock(index int) *AccountBlock {
+	block := bc.Chain[index]
+	if block.BlockType != "account" {
+		return nil
+	}
+	accountBlock := &AccountBlock{}
+	accountBlock.Block = block
+	return accountBlock
 }
 
 func (bc *Blockchain) AddAccountBlock(account *models.Account) *AccountBlock {

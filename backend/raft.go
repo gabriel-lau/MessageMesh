@@ -173,6 +173,15 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			newState, _ := raftconsensus.GetCurrentState()
 			blockchain := newState.(*raftState).Blockchain
 			debug.Log("blockchain", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
+			latestBlock := blockchain.GetLatestBlock()
+			debug.Log("blockchain", fmt.Sprintf("Latest block: %s", latestBlock.BlockType))
+			if latestBlock.BlockType == "message" {
+				messageBlock := blockchain.GetMessageBlock(latestBlock.Index)
+				debug.Log("blockchain", fmt.Sprintf("Message block: %s", messageBlock.Message.Message))
+			} else if latestBlock.BlockType == "account" {
+				accountBlock := blockchain.GetAccountBlock(latestBlock.Index)
+				debug.Log("blockchain", fmt.Sprintf("Account block: %s", accountBlock.Account.Username))
+			}
 
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
