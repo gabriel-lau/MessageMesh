@@ -180,6 +180,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			case "message":
 				if messageData, ok := latestBlock.Data.(*MessageData); ok {
 					debug.Log("blockchain", fmt.Sprintf("Latest message from: %s", messageData.Message.Sender))
+					debug.Log("blockchain", fmt.Sprintf("Latest message: %s", messageData.Message.Message))
 				}
 			case "account":
 				if accountData, ok := latestBlock.Data.(*AccountData); ok {
