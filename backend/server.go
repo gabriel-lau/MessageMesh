@@ -39,42 +39,23 @@ func (network *Network) ConnectToNetwork() {
 }
 
 func (network *Network) starteventhandler() {
-	// refreshticker := time.NewTicker(time.Second)
-	// defer refreshticker.Stop()
 	network.ChatRoom.Outbound <- "I am " + network.ChatRoom.selfid.String()
-	for {
-		select {
+	// for {
+	// 	select {
 
-		// case msg := <-network.ChatRoom.MsgInputs:
-		// 	// Send the message to outbound queue
-		// 	network.ChatRoom.Outbound <- msg
-		// 	// Add the message to the message box as a self message
-		// 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Message: %s\n", msg)
+	// 	case msg := <-network.ChatRoom.Inbound:
+	// 		// Print the recieved messages to the message box
+	// 		debug.Log("server", fmt.Sprintf("Message: %s", msg.Message))
 
-		// case cmd := <-network.ChatRoom.CmdInputs:
-		// 	// Handle the recieved command
-		// 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Command: %s\n", cmd)
+	// 	case log := <-network.ChatRoom.Logs:
+	// 		// Add the log to the message box
+	// 		debug.Log("server", fmt.Sprintf("Log: %s", log))
 
-		case msg := <-network.ChatRoom.Inbound:
-			// Print the recieved messages to the message box
-			debug.Log("server", fmt.Sprintf("Message: %s", msg.Message))
-
-		case log := <-network.ChatRoom.Logs:
-			// Add the log to the message box
-			debug.Log("server", fmt.Sprintf("Log: %s", log))
-
-		// case <-refreshticker.C:
-		// 	// Refresh the list of peers in the chat room periodically
-		// 	peerlist := network.ChatRoom.PeerList()
-		// 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Peers: %s\n", peerlist)
-		// 	peerstoreList := network.P2p.Host.Peerstore().Peers()
-		// 	fmt.Printf(blue+"[server.go]"+" ["+time.Now().Format("15:04:05")+"]"+reset+" Peerstore: %s\n", peerstoreList)
-
-		case <-network.ChatRoom.psctx.Done():
-			// End the event loop
-			return
-		}
-	}
+	// 	case <-network.ChatRoom.psctx.Done():
+	// 		// End the event loop
+	// 		return
+	// 	}
+	// }
 }
 
 func (network *Network) SendMessage(message string) {

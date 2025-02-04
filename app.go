@@ -2,12 +2,8 @@ package main
 
 import (
 	backend "MessageMesh/backend"
-	debug "MessageMesh/debug"
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -28,24 +24,7 @@ func (a *App) startup(ctx context.Context) {
 	a.network.ConnectToNetwork()
 
 	// Events Emitter
-	go func() {
-		debug.Log("app", "Wails events emitter started")
-		refreshticker := time.NewTicker(time.Second)
-		defer refreshticker.Stop()
-
-		if GetEnvVar("HEADELESS") == "false" {
-			for {
-				select {
-				case msg := <-a.network.ChatRoom.Inbound:
-					runtime.EventsEmit(a.ctx, "getMessage", msg.Message)
-					// debug.Log("app", "Message: "+msg.Message)
-					time.Sleep(1 * time.Second)
-				case <-refreshticker.C:
-					runtime.EventsEmit(a.ctx, "getPeersList", a.network.ChatRoom.PeerList())
-				}
-			}
-		}
-	}()
+	go backend.UIDataLoop(a.network, a.ctx)
 }
 
 // Greet returns a greeting for the given name

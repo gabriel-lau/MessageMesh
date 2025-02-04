@@ -4,10 +4,8 @@ import (
 	debug "MessageMesh/debug"
 	"context"
 	"embed"
-	"os"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -18,13 +16,13 @@ var assets embed.FS
 
 func main() {
 
-	if GetEnvVar("HEADLESS") == "true" {
+	if debug.GetEnvVar("HEADLESS") == "true" {
 		debug.Log("main", "Running in headless mode")
 		app := NewApp()
 		ctx := context.Background()
 		app.startup(ctx)
 		for {
-			app.SendMessage("Hello I am " + GetEnvVar("USERNAME"))
+			app.SendMessage("Hello I am " + debug.GetEnvVar("USERNAME"))
 			time.Sleep(30 * time.Second)
 		}
 	}
@@ -52,12 +50,4 @@ func main() {
 	if err != nil {
 		debug.Log("error", err.Error())
 	}
-}
-
-func GetEnvVar(key string) string {
-	err := godotenv.Load(".env")
-	if err != nil {
-		debug.Log("error", "Error loading .env file")
-	}
-	return os.Getenv(key)
 }

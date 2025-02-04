@@ -27,6 +27,7 @@ type ChatRoom struct {
 
 	PeerJoin  chan peer.ID
 	PeerLeave chan peer.ID
+	PeerIDs   chan []peer.ID
 
 	// Represents the name of the chat room
 	RoomName string
