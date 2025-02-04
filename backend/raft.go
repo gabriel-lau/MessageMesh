@@ -122,7 +122,7 @@ func StartRaft(network *Network) {
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
 
-	// waitForLeader(raftInstance)
+	waitForLeader(raftInstance)
 
 	go networkLoop(network, raftInstance)
 
