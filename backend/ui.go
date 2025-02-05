@@ -9,7 +9,7 @@ import (
 
 func UIDataLoop(network Network, ctx context.Context) {
 	debug.Log("ui", "Wails events emitter started")
-	if debug.IsHeadless {
+	if !debug.IsHeadless {
 
 		// Send the user's peer ID once to the frontend and then remove the event listener
 		runtime.EventsEmit(ctx, "getUserPeerID", network.P2p.Host.ID())
