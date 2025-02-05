@@ -87,6 +87,8 @@ func StartRaft(network *Network) {
 	config.HeartbeatTimeout = 1000 * time.Millisecond // Increase heartbeat timeout
 	config.ElectionTimeout = 1000 * time.Millisecond  // Increase election timeout
 	config.CommitTimeout = 500 * time.Millisecond     // Increase commit timeout
+	config.LeaderLeaseTimeout = 1000 * time.Millisecond
+	config.SnapshotInterval = 10 * time.Second
 	// --
 
 	// -- SnapshotStore
@@ -126,7 +128,7 @@ func StartRaft(network *Network) {
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
 
-	waitForLeader(raftInstance)
+	// waitForLeader(raftInstance)
 
 	go networkLoop(network, raftInstance)
 
