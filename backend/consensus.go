@@ -15,7 +15,7 @@ import (
 )
 
 type raftState struct {
-	Blockchain Blockchain
+	Blockchain models.Blockchain
 }
 
 type raftOP struct {
@@ -43,8 +43,8 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 func StartConsensus(network *Network) {
 	// Initialize blockchain with genesis block
 	initialState := &raftState{
-		Blockchain: Blockchain{
-			Chain: []*Block{CreateGenesisBlock()},
+		Blockchain: models.Blockchain{
+			Chain: []*models.Block{models.CreateGenesisBlock()},
 		},
 	}
 
@@ -188,18 +188,18 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			// Type assertion to access specific data
 			switch latestBlock.BlockType {
 			case "message":
-				if messageData, ok := latestBlock.Data.(*MessageData); ok {
+				if messageData, ok := latestBlock.Data.(*models.MessageData); ok {
 					debug.Log("blockchain", fmt.Sprintf("Latest message from: %s", messageData.Message.Sender))
 					debug.Log("blockchain", fmt.Sprintf("Latest message: %s", messageData.Message.Message))
 				}
 			case "account":
-				if accountData, ok := latestBlock.Data.(*AccountData); ok {
+				if accountData, ok := latestBlock.Data.(*models.AccountData); ok {
 					debug.Log("blockchain", fmt.Sprintf("Latest account: %s", accountData.Account.Username))
 				}
 			default:
 				debug.Log("blockchain", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
 			}
-			network.ConsensusService.Blockchain <- Block{
+			network.ConsensusService.Blockchain <- models.Block{
 				Index:     latestBlock.Index,
 				Timestamp: latestBlock.Timestamp,
 				PrevHash:  latestBlock.PrevHash,

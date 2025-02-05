@@ -1,7 +1,6 @@
-package backend
+package models
 
 import (
-	"MessageMesh/backend/models"
 	"crypto/sha256"
 	"encoding/hex"
 	"time"
@@ -24,7 +23,7 @@ type Block struct {
 
 // MessageData implements BlockData
 type MessageData struct {
-	*models.Message
+	*Message
 }
 
 func (md *MessageData) CalculateDataHash() string {
@@ -33,7 +32,7 @@ func (md *MessageData) CalculateDataHash() string {
 
 // AccountData implements BlockData
 type AccountData struct {
-	*models.Account
+	*Account
 }
 
 func (ad *AccountData) CalculateDataHash() string {
@@ -76,7 +75,7 @@ func (bc *Blockchain) GetMessageBlock(index int) *Block {
 	return block
 }
 
-func (bc *Blockchain) AddMessageBlock(message *models.Message) *Block {
+func (bc *Blockchain) AddMessageBlock(message *Message) *Block {
 	prevBlock := bc.Chain[len(bc.Chain)-1]
 	newBlock := &Block{
 		Index:     prevBlock.Index + 1,
@@ -98,7 +97,7 @@ func (bc *Blockchain) GetAccountBlock(index int) *Block {
 	return block
 }
 
-func (bc *Blockchain) AddAccountBlock(account *models.Account) *Block {
+func (bc *Blockchain) AddAccountBlock(account *Account) *Block {
 	prevBlock := bc.Chain[len(bc.Chain)-1]
 	newBlock := &Block{
 		Index:     prevBlock.Index + 1,
