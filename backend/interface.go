@@ -13,11 +13,11 @@ import (
 
 type Network struct {
 	// P2P Network (libp2p connections)
-	P2p      *P2P
-	ChatRoom *ChatRoom
+	P2pService    *P2PService
+	PubSubService *PubSubService
 }
 
-type P2P struct {
+type P2PService struct {
 	Ctx       context.Context
 	Host      host.Host
 	KadDHT    *dht.IpfsDHT
@@ -25,7 +25,7 @@ type P2P struct {
 	PubSub    *pubsub.PubSub
 }
 
-type ChatRoom struct {
+type PubSubService struct {
 	Inbound   chan models.Message
 	Outbound  chan string
 	PeerJoin  chan peer.ID

@@ -41,7 +41,7 @@ A Kademlia DHT is then bootstrapped on this host using the default peers offered
 and a Peer Discovery service is created from this Kademlia DHT. The PubSub handler is then
 created on the host using the peer discovery service created prior.
 */
-func NewP2P() *P2P {
+func NewP2PService() *P2PService {
 	// Setup a background context
 	ctx := context.Background()
 
@@ -62,7 +62,7 @@ func NewP2P() *P2P {
 	debug.Log("p2p", "Created the PubSub Handler.")
 
 	// Return the P2P object
-	return &P2P{
+	return &P2PService{
 		Ctx:       ctx,
 		Host:      nodehost,
 		KadDHT:    kaddht,
@@ -76,7 +76,7 @@ func NewP2P() *P2P {
 // to advertise the service and then disovers all peers advertising the same.
 // The peer discovery is handled by a go-routine that will read from a channel
 // of peer address information until the peer channel closes
-func (p2p *P2P) AdvertiseConnect() {
+func (p2p *P2PService) AdvertiseConnect() {
 	// Advertise the availabilty of the service on this node
 	ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
 
@@ -106,7 +106,7 @@ func (p2p *P2P) AdvertiseConnect() {
 // the ability to provide the service and then disovers all peers that provide the same.
 // The peer discovery is handled by a go-routine that will read from a channel
 // of peer address information until the peer channel closes
-func (p2p *P2P) AnnounceConnect() {
+func (p2p *P2PService) AnnounceConnect() {
 	// Generate the Service CID
 	cidvalue := generateCID(service)
 	debug.Log("p2p", "Generated the Service CID.")
@@ -339,7 +339,7 @@ func generateCID(namestring string) cid.Cid {
 }
 
 // Get all the nodes multiaddress in the network (including self)
-func (p2p *P2P) AllNodeAddr() []string {
+func (p2p *P2PService) AllNodeAddr() []string {
 	var addrs []string
 	for _, addr := range p2p.Host.Addrs() {
 		addrs = append(addrs, addr.String())
@@ -347,7 +347,7 @@ func (p2p *P2P) AllNodeAddr() []string {
 	return addrs
 }
 
-func (p2p *P2P) GetPeerStore() []peer.ID {
+func (p2p *P2PService) GetPeerStore() []peer.ID {
 	peers := p2p.Host.Peerstore().Peers()
 	return peers
 }

@@ -11,30 +11,30 @@ func (network *Network) ConnectToNetwork() {
 	debug.Log("server", "This may take upto 30 seconds.")
 
 	// Create a new P2PHost
-	network.P2p = NewP2P()
+	network.P2pService = NewP2PService()
 	debug.Log("server", "Completed P2P Setup")
 
 	// Connect to peers with the chosen discovery method
-	network.P2p.AdvertiseConnect()
+	network.P2pService.AdvertiseConnect()
 	// network.P2p.AnnounceConnect()
 	debug.Log("server", "Connected to Service Peers")
 
 	// Join the chat room
-	network.ChatRoom, _ = JoinChatRoom(network.P2p)
-	debug.Log("server", "Joined the chatroom")
+	network.PubSubService, _ = JoinPubSub(network.P2pService)
+	debug.Log("server", "Joined the PubSub")
 	// Wait for network setup to complete
 	time.Sleep(time.Second * 5)
 	debug.Log("server", "Connected to Service Peers")
 
 	// Print my peer ID
-	debug.Log("server", fmt.Sprintf("My Peer ID: %s", network.ChatRoom.SelfID()))
+	debug.Log("server", fmt.Sprintf("My Peer ID: %s", network.PubSubService.SelfID()))
 
 	// Print my multiaddress
-	debug.Log("server", fmt.Sprintf("My Multiaddress: %s", network.P2p.AllNodeAddr()))
+	debug.Log("server", fmt.Sprintf("My Multiaddress: %s", network.P2pService.AllNodeAddr()))
 
 	go StartRaft(network)
 }
 
 func (network *Network) SendMessage(message string) {
-	network.ChatRoom.Outbound <- message
+	network.PubSubService.Outbound <- message
 }

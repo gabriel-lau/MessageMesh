@@ -12,7 +12,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
-func JoinChatRoom(p2phost *P2P) (*ChatRoom, error) {
+func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 
 	// Create a PubSub topic with the room name
 	topic, err := p2phost.PubSub.Join("messagemesh")
@@ -21,7 +21,7 @@ func JoinChatRoom(p2phost *P2P) (*ChatRoom, error) {
 		debug.Log("err", "Could not join the chat room")
 		return nil, err
 	}
-	debug.Log("chatRoom", "Joined the chat room")
+	debug.Log("pubsub", "Joined the chat room")
 
 	// Subscribe to the PubSub topic
 	sub, err := topic.Subscribe()
@@ -30,13 +30,13 @@ func JoinChatRoom(p2phost *P2P) (*ChatRoom, error) {
 		debug.Log("err", "Could not subscribe to the chat room")
 		return nil, err
 	}
-	debug.Log("chatRoom", "Subscribed to the chat room")
+	debug.Log("pubsub", "Subscribed to the chat room")
 
 	// Create cancellable context
 	pubsubctx, cancel := context.WithCancel(context.Background())
 
 	// Create a ChatRoom object
-	chatroom := &ChatRoom{
+	pubsubservice := &PubSubService{
 		Inbound:   make(chan models.Message),
 		Outbound:  make(chan string),
 		PeerJoin:  make(chan peer.ID),
@@ -50,33 +50,33 @@ func JoinChatRoom(p2phost *P2P) (*ChatRoom, error) {
 	}
 
 	// Start the subscribe loop
-	go chatroom.SubLoop()
-	debug.Log("chatRoom", "SubLoop started")
+	go pubsubservice.SubLoop()
+	debug.Log("pubsub", "SubLoop started")
 
 	// Start the publish loop
-	go chatroom.PubLoop()
-	debug.Log("chatRoom", "PubLoop started")
+	go pubsubservice.PubLoop()
+	debug.Log("pubsub", "PubLoop started")
 
 	// Start the peer joined loop
-	go chatroom.PeerJoinedLoop()
-	debug.Log("chatRoom", "PeerJoinedLoop started")
+	go pubsubservice.PeerJoinedLoop()
+	debug.Log("pubsub", "PeerJoinedLoop started")
 
 	// Return the chatroom
-	return chatroom, nil
+	return pubsubservice, nil
 }
 
 // A method of ChatRoom that publishes a chatmessage
 // to the PubSub topic until the pubsub context closes
-func (cr *ChatRoom) PubLoop() {
+func (pubSubService *PubSubService) PubLoop() {
 	for {
 		select {
-		case <-cr.psctx.Done():
+		case <-pubSubService.psctx.Done():
 			return
 
-		case message := <-cr.Outbound:
+		case message := <-pubSubService.Outbound:
 			// Create a ChatMessage
 			m := models.Message{
-				Sender:    cr.selfid.Pretty(),
+				Sender:    pubSubService.selfid.Pretty(),
 				Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
 				Message:   message,
 				Timestamp: time.Now().Format("2006-01-02 15:04:05"),
@@ -91,7 +91,7 @@ func (cr *ChatRoom) PubLoop() {
 			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
 
 			// Publish the message to the topic
-			err = cr.pstopic.Publish(cr.psctx, messagebytes)
+			err = pubSubService.pstopic.Publish(pubSubService.psctx, messagebytes)
 			if err != nil {
 				debug.Log("err", "Could not publish to topic")
 				continue
@@ -104,30 +104,30 @@ func (cr *ChatRoom) PubLoop() {
 // A method of ChatRoom that continously reads from the subscription
 // until either the subscription or pubsub context closes.
 // The recieved message is parsed sent into the inbound channel
-func (cr *ChatRoom) SubLoop() {
+func (pubSubService *PubSubService) SubLoop() {
 	// Start loop
 	for {
 		select {
-		case <-cr.psctx.Done():
+		case <-pubSubService.psctx.Done():
 			return
 
 		default:
 			// Read a message from the subscription
-			message, err := cr.psub.Next(cr.psctx)
+			message, err := pubSubService.psub.Next(pubSubService.psctx)
 			// Check error
 			if err != nil {
 				// Close the messages queue (subscription has closed)
-				close(cr.Inbound)
+				close(pubSubService.Inbound)
 				debug.Log("err", "Subscription has closed")
 				return
 			}
 
 			// Check if message is from self
-			if message.ReceivedFrom == cr.selfid {
-				debug.Log("chatRoom", "Sub Message from self")
+			if message.ReceivedFrom == pubSubService.selfid {
+				debug.Log("pubsub", "Sub Message from self")
 				continue
 			} else {
-				debug.Log("chatRoom", "Sub Message from other peer")
+				debug.Log("pubsub", "Sub Message from other peer")
 			}
 
 			// Declare a ChatMessage
@@ -143,14 +143,14 @@ func (cr *ChatRoom) SubLoop() {
 			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Receiver: " + cm.Receiver)
 
 			// Send the ChatMessage into the message queue
-			cr.Inbound <- *cm
+			pubSubService.Inbound <- *cm
 		}
 	}
 }
 
-func (cr *ChatRoom) PeerJoinedLoop() {
+func (pubSubService *PubSubService) PeerJoinedLoop() {
 	// Get the event handler for the topic
-	evts, err := cr.pstopic.EventHandler()
+	evts, err := pubSubService.pstopic.EventHandler()
 	if err != nil {
 		debug.Log("err", fmt.Sprintf("Failed to get event handler: %s", err))
 		return
@@ -165,13 +165,13 @@ func (cr *ChatRoom) PeerJoinedLoop() {
 
 		switch peerEvent.Type {
 		case pubsub.PeerJoin: // PeerJoin event
-			debug.Log("chatRoom", fmt.Sprintf("Peer joined: %s", peerEvent.Peer))
-			cr.PeerJoin <- peerEvent.Peer
+			debug.Log("pubsub", fmt.Sprintf("Peer joined: %s", peerEvent.Peer))
+			pubSubService.PeerJoin <- peerEvent.Peer
 			// raftInstance.AddVoter(raft.ServerID(peerEvent.Peer.String()), raft.ServerAddress(peerEvent.Peer.String()), 0, 0)
 
 		case pubsub.PeerLeave: // PeerLeave event
-			debug.Log("chatRoom", fmt.Sprintf("Peer left: %s", peerEvent.Peer))
-			cr.PeerLeave <- peerEvent.Peer
+			debug.Log("pubsub", fmt.Sprintf("Peer left: %s", peerEvent.Peer))
+			pubSubService.PeerLeave <- peerEvent.Peer
 			// raftInstance.RemoveServer(raft.ServerID(peerEvent.Peer.String()), 0, 0)
 		}
 	}
@@ -179,23 +179,23 @@ func (cr *ChatRoom) PeerJoinedLoop() {
 
 // A method of ChatRoom that returns a list
 // of all peer IDs connected to it
-func (cr *ChatRoom) PeerList() []peer.ID {
+func (pubSubService *PubSubService) PeerList() []peer.ID {
 	// Return the slice of peer IDs connected to chat room topic
-	return cr.pstopic.ListPeers()
+	return pubSubService.pstopic.ListPeers()
 }
 
 // A method of ChatRoom that updates the chat
 // room by subscribing to the new topic
-func (cr *ChatRoom) Exit() {
-	defer cr.pscancel()
+func (pubSubService *PubSubService) Exit() {
+	defer pubSubService.pscancel()
 
 	// Cancel the existing subscription
-	cr.psub.Cancel()
+	pubSubService.psub.Cancel()
 	// Close the topic handler
-	cr.pstopic.Close()
+	pubSubService.pstopic.Close()
 }
 
 // A method of ChatRoom that returns the self peer ID
-func (cr *ChatRoom) SelfID() peer.ID {
-	return cr.selfid
+func (pubSubService *PubSubService) SelfID() peer.ID {
+	return pubSubService.selfid
 }

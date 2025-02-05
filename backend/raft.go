@@ -51,10 +51,10 @@ func StartRaft(network *Network) {
 	// Create the consensus with blockchain state
 	raftconsensus := libp2praft.NewOpLog(initialState, &raftOP{})
 
-	pids := network.ChatRoom.PeerList()
+	pids := network.PubSubService.PeerList()
 	// pids := network.P2p.Host.Peerstore().Peers()
 	// -- Create Raft servers configuration
-	pids = append(pids, network.P2p.Host.ID())
+	pids = append(pids, network.P2pService.Host.ID())
 	servers := make([]raft.Server, len(pids))
 	for i, pid := range pids {
 		servers[i] = raft.Server{
@@ -70,7 +70,7 @@ func StartRaft(network *Network) {
 	// --
 
 	// -- Create LibP2P transports Raft
-	transport, err := libp2praft.NewLibp2pTransport(network.P2p.Host, 3*time.Second)
+	transport, err := libp2praft.NewLibp2pTransport(network.P2pService.Host, 3*time.Second)
 	if err != nil {
 		debug.Log("err", fmt.Sprintf("Failed to create LibP2P transport: %s", err))
 	}
@@ -83,7 +83,7 @@ func StartRaft(network *Network) {
 		config.LogOutput = io.Discard
 		config.Logger = nil
 	}
-	config.LocalID = raft.ServerID(network.P2p.Host.ID().String())
+	config.LocalID = raft.ServerID(network.P2pService.Host.ID().String())
 	config.HeartbeatTimeout = 1000 * time.Millisecond // Increase heartbeat timeout
 	config.ElectionTimeout = 1000 * time.Millisecond  // Increase election timeout
 	config.CommitTimeout = 500 * time.Millisecond     // Increase commit timeout
@@ -136,7 +136,7 @@ func StartRaft(network *Network) {
 func networkLoop(network *Network, raftInstance *raft.Raft) {
 	for {
 		select {
-		case peer := <-network.ChatRoom.PeerJoin:
+		case peer := <-network.PubSubService.PeerJoin:
 			debug.Log("raft", fmt.Sprintf("Peer joined: %s", peer))
 
 			// Only add voter if we are the leader
@@ -151,9 +151,9 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 					debug.Log("err", fmt.Sprintf("Failed to add voter: %s", err))
 				}
 			}
-			network.ChatRoom.PeerIDs <- network.ChatRoom.PeerList()
+			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
 
-		case peer := <-network.ChatRoom.PeerLeave:
+		case peer := <-network.PubSubService.PeerLeave:
 			debug.Log("raft", fmt.Sprintf("Peer left: %s", peer))
 			if raftInstance.State() == raft.Leader {
 				future := raftInstance.RemoveServer(
@@ -165,7 +165,7 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 					debug.Log("err", fmt.Sprintf("Failed to remove server: %s", err))
 				}
 			}
-			network.ChatRoom.PeerIDs <- network.ChatRoom.PeerList()
+			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
 		}
 	}
 }
@@ -197,10 +197,10 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
 
-		case <-network.ChatRoom.Outbound:
+		case <-network.PubSubService.Outbound:
 			debug.Log("raft", "Outbound message received")
 
-		case message := <-network.ChatRoom.Inbound:
+		case message := <-network.PubSubService.Inbound:
 			debug.Log("blockchain", fmt.Sprintf("Received message: %s", message.Message))
 
 			if actor.IsLeader() {
