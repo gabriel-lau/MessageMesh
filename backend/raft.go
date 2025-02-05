@@ -2,7 +2,6 @@ package backend
 
 import (
 	"MessageMesh/debug"
-	"context"
 	"fmt"
 	"io"
 	"time"
@@ -128,8 +127,6 @@ func StartRaft(network *Network) {
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
 
-	// waitForLeader(raftInstance)
-
 	go networkLoop(network, raftInstance)
 
 	go blockchainLoop(network, raftInstance, raftconsensus, actor)
@@ -226,39 +223,39 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 	}
 }
 
-func waitForLeader(r *raft.Raft) {
-	obsCh := make(chan raft.Observation, 1)
-	observer := raft.NewObserver(obsCh, false, nil)
-	r.RegisterObserver(observer)
-	defer r.DeregisterObserver(observer)
+// func waitForLeader(r *raft.Raft) {
+// 	obsCh := make(chan raft.Observation, 1)
+// 	observer := raft.NewObserver(obsCh, false, nil)
+// 	r.RegisterObserver(observer)
+// 	defer r.DeregisterObserver(observer)
 
-	// New Raft does not allow leader observation directy
-	// What's worse, there will be no notification that a new
-	// leader was elected because observations are set before
-	// setting the Leader and only when the RaftState has changed.
-	// Therefore, we need a ticker.
+// 	// New Raft does not allow leader observation directy
+// 	// What's worse, there will be no notification that a new
+// 	// leader was elected because observations are set before
+// 	// setting the Leader and only when the RaftState has changed.
+// 	// Therefore, we need a ticker.
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	ticker := time.NewTicker(time.Second / 2)
-	defer ticker.Stop()
-	for {
-		select {
-		case obs := <-obsCh:
-			switch obs.Data.(type) {
-			case raft.RaftState:
-				if r.Leader() != "" {
-					return
-				}
-			}
-		case <-ticker.C:
-			if r.Leader() != "" {
-				return
-			}
-		case <-ctx.Done():
-			debug.Log("raft", "timed out waiting for Leader")
-			debug.Log("raft", fmt.Sprintf("Current Raft State: %s", r.State()))
-			debug.Log("raft", fmt.Sprintf("Current Leader: %s", r.Leader()))
-			return
-		}
-	}
-}
+// 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+// 	ticker := time.NewTicker(time.Second / 2)
+// 	defer ticker.Stop()
+// 	for {
+// 		select {
+// 		case obs := <-obsCh:
+// 			switch obs.Data.(type) {
+// 			case raft.RaftState:
+// 				if r.Leader() != "" {
+// 					return
+// 				}
+// 			}
+// 		case <-ticker.C:
+// 			if r.Leader() != "" {
+// 				return
+// 			}
+// 		case <-ctx.Done():
+// 			debug.Log("raft", "timed out waiting for Leader")
+// 			debug.Log("raft", fmt.Sprintf("Current Raft State: %s", r.State()))
+// 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", r.Leader()))
+// 			return
+// 		}
+// 	}
+// }

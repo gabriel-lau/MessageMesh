@@ -6,6 +6,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// get HEADLESS environment variable
+var IsHeadless = GetEnvVar("HEADLESS") == "true"
+
+var Username = GetEnvVar("USERNAME")
+
 func GetEnvVar(key string) string {
 	err := godotenv.Load(".env")
 	if err != nil {

@@ -21,9 +21,11 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Start the network, connect to peers and join the blockchain
 	a.network.ConnectToNetwork()
 
-	// Events Emitter
+	// Start the UI loop
 	go backend.UIDataLoop(a.network, a.ctx)
 }
 

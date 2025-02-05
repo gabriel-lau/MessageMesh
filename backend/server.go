@@ -33,29 +33,7 @@ func (network *Network) ConnectToNetwork() {
 	// Print my multiaddress
 	debug.Log("server", fmt.Sprintf("My Multiaddress: %s", network.P2p.AllNodeAddr()))
 
-	go network.starteventhandler()
-
 	go StartRaft(network)
-}
-
-func (network *Network) starteventhandler() {
-	network.ChatRoom.Outbound <- "I am " + network.ChatRoom.selfid.String()
-	// for {
-	// 	select {
-
-	// 	case msg := <-network.ChatRoom.Inbound:
-	// 		// Print the recieved messages to the message box
-	// 		debug.Log("server", fmt.Sprintf("Message: %s", msg.Message))
-
-	// 	case log := <-network.ChatRoom.Logs:
-	// 		// Add the log to the message box
-	// 		debug.Log("server", fmt.Sprintf("Log: %s", log))
-
-	// 	case <-network.ChatRoom.psctx.Done():
-	// 		// End the event loop
-	// 		return
-	// 	}
-	// }
 }
 
 func (network *Network) SendMessage(message string) {
