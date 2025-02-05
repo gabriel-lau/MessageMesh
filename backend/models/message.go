@@ -6,7 +6,3 @@ type Message struct {
 	Message   string `json:"message"`
 	Timestamp string `json:"timestamp"`
 }
-
-type FirstMessage struct {
-	SymetricKey string `json:"symetricKey"`
-}

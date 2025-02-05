@@ -196,6 +196,10 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				if accountData, ok := latestBlock.Data.(*models.AccountData); ok {
 					debug.Log("blockchain", fmt.Sprintf("Latest account: %s", accountData.Account.Username))
 				}
+			case "firstMessage":
+				if firstMessageData, ok := latestBlock.Data.(*models.FirstMessageData); ok {
+					debug.Log("blockchain", fmt.Sprintf("Latest first message: %s", firstMessageData.FirstMessage.SymetricKey))
+				}
 			default:
 				debug.Log("blockchain", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
 			}

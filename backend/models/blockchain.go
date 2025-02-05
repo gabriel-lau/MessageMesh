@@ -30,6 +30,14 @@ func (md *MessageData) CalculateDataHash() string {
 	return md.Sender + md.Receiver + md.Message.Message + md.Timestamp
 }
 
+type FirstMessageData struct {
+	*FirstMessage
+}
+
+func (md *FirstMessageData) CalculateDataHash() string {
+	return md.SymetricKey
+}
+
 // AccountData implements BlockData
 type AccountData struct {
 	*Account

@@ -346,8 +346,3 @@ func (p2p *P2PService) AllNodeAddr() []string {
 	}
 	return addrs
 }
-
-func (p2p *P2PService) GetPeerStore() []peer.ID {
-	peers := p2p.Host.Peerstore().Peers()
-	return peers
-}
