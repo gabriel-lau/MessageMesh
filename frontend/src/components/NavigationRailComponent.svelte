@@ -36,10 +36,10 @@
   let status: 'green' | 'red' | 'disabled' | 'gray' = 'green';
   let settingsModal = false;
   let settingsToast = false;
-  // function getOnlinePeers() {
-  //   const eventRemover = EventsOn('myEvent', () => console.log('Event fired.'));
-  //   return () => eventRemover();
-  // }
+  function getOnlinePeers() {
+    const eventRemover = EventsOn('myEvent', () => console.log('Event fired.'));
+    return () => eventRemover();
+  }
 </script>
 
 <div class="h-screen">

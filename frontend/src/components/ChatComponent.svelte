@@ -5,17 +5,17 @@
   import { SendMessage } from '../../wailsjs/go/main/App.js';
   import * as Wails from '../../wailsjs/runtime/runtime.js';
 
-  let { isChatOpen = $bindable() } = $props();
+  let { userPeerID = $bindable() } = $props();
   let message = $state('');
   // let chatService = new backend.ChatService();
   Wails.EventsOn('getMessage', (newMessage) => {
-    messageList.push({ message: newMessage });
+    messageList.push(newMessage);
+    console.log(messageList);
   });
   let messageList = $state([{}]);
 
   function sendMessage(): void {
     SendMessage(message);
-    messageList.push({ message: message });
     message = '';
   }
 </script>
@@ -35,30 +35,31 @@
     </Navbar>
   </div>
   <div class="flex-auto flex flex-col items-end h-full overflow-y-auto">
-    <!-- Chat message 1 -->
-    <div class="flex w-full p-3 mt-auto">
-      <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl dark:bg-gray-700">
-        <div class="flex items-center space-x-2 rtl:space-x-reverse">
-          <span class="text-sm font-semibold text-gray-900 dark:text-white">Bonnie Green</span>
-          <span class="text-sm font-normal text-gray-500 dark:text-gray-400">11:46</span>
-        </div>
-        <p class="text-sm font-normal py-2.5 text-gray-900 dark:text-white">That's awesome. I think our users will really appreciate the improvements.</p>
-        <span class="text-sm font-normal text-gray-500 dark:text-gray-400">Delivered</span>
-      </div>
-    </div>
-    <!-- Chat message 2 (Response) -->
-
+    <!-- Check if message is from self or other -->
     {#each messageList as message}
+      {#if message.sender === userPeerID}
       <div class="flex w-full justify-end p-3">
         <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 text-white bg-primary-700 dark:bg-primary-800 rounded-l-xl rounded-br-xl">
           <div class="flex items-center space-x-2 rtl:space-x-reverse">
-            <span class="text-sm font-semibold text-white">Bonnie Green</span>
+            <span class="text-sm font-semibold text-white">{message.sender}</span>
             <span class="text-sm font-normal text-gray-300">11:46</span>
           </div>
           <p class="text-sm font-normal py-2.5 text-white">{message.message}</p>
           <span class="text-sm font-normal text-end text-gray-300">Delivered</span>
         </div>
       </div>
+      {:else}
+      <div class="flex w-full p-3 mt-auto">
+        <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl dark:bg-gray-700">
+          <div class="flex items-center space-x-2 rtl:space-x-reverse">
+            <span class="text-sm font-semibold text-gray-900 dark:text-white">{message.sender}</span>
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">11:46</span>
+          </div>
+          <p class="text-sm font-normal py-2.5 text-gray-900 dark:text-white">{message.message}</p>
+          <span class="text-sm font-normal text-gray-500 dark:text-gray-400">Delivered</span>
+        </div>
+      </div>
+      {/if}
     {/each}
   </div>
   <div class="flex-none">
