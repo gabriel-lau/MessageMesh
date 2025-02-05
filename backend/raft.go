@@ -40,7 +40,7 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	return currentState, nil
 }
 
-func StartRaft(network *Network) {
+func StartConsensus(network *Network) {
 	// Initialize blockchain with genesis block
 	initialState := &raftState{
 		Blockchain: Blockchain{
@@ -127,6 +127,12 @@ func StartRaft(network *Network) {
 
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
+	consensusService := &ConsensusService{
+		Raft:      raftInstance,
+		Actor:     actor,
+		Consensus: raftconsensus,
+	}
+	network.ConsensusService = consensusService
 
 	go networkLoop(network, raftInstance)
 
@@ -192,6 +198,14 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				}
 			default:
 				debug.Log("blockchain", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
+			}
+			network.ConsensusService.Blockchain <- Block{
+				Index:     latestBlock.Index,
+				Timestamp: latestBlock.Timestamp,
+				PrevHash:  latestBlock.PrevHash,
+				Hash:      latestBlock.Hash,
+				BlockType: latestBlock.BlockType,
+				Data:      latestBlock.Data,
 			}
 
 		case <-raftInstance.LeaderCh():

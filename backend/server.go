@@ -32,7 +32,7 @@ func (network *Network) ConnectToNetwork() {
 	// Print my multiaddress
 	debug.Log("server", fmt.Sprintf("My Multiaddress: %s", network.P2pService.AllNodeAddr()))
 
-	go StartRaft(network)
+	go StartConsensus(network)
 }
 
 func (network *Network) SendMessage(message string) {
