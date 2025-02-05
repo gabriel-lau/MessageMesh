@@ -12,16 +12,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
-// A structure that represents a PubSub Chat Room
-// A structure that represents a chat log
-type chatlog struct {
-	logprefix string
-	logmsg    string
-}
-
-// A constructor function that generates and returns a new
-// ChatRoom for a given P2PHost, username and roomname
-func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
+func JoinChatRoom(p2phost *P2P) (*ChatRoom, error) {
 
 	// Create a PubSub topic with the room name
 	topic, err := p2phost.PubSub.Join("messagemesh")
@@ -48,7 +39,6 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 	chatroom := &ChatRoom{
 		Inbound:   make(chan models.Message),
 		Outbound:  make(chan string),
-		Logs:      make(chan chatlog),
 		PeerJoin:  make(chan peer.ID),
 		PeerLeave: make(chan peer.ID),
 
@@ -56,9 +46,6 @@ func JoinChatRoom(p2phost *P2P, username string) (*ChatRoom, error) {
 		pscancel: cancel,
 		pstopic:  topic,
 		psub:     sub,
-
-		RoomName: "messagemesh",
-		UserName: username,
 		selfid:   p2phost.Host.ID(),
 	}
 
@@ -98,7 +85,6 @@ func (cr *ChatRoom) PubLoop() {
 			// Marshal the ChatMessage into a JSON
 			messagebytes, err := json.Marshal(m)
 			if err != nil {
-				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not marshal JSON"}
 				debug.Log("err", "Could not marshal JSON")
 				continue
 			}
@@ -107,7 +93,6 @@ func (cr *ChatRoom) PubLoop() {
 			// Publish the message to the topic
 			err = cr.pstopic.Publish(cr.psctx, messagebytes)
 			if err != nil {
-				cr.Logs <- chatlog{logprefix: "puberr", logmsg: "could not publish to topic"}
 				debug.Log("err", "Could not publish to topic")
 				continue
 			}
@@ -133,7 +118,6 @@ func (cr *ChatRoom) SubLoop() {
 			if err != nil {
 				// Close the messages queue (subscription has closed)
 				close(cr.Inbound)
-				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "subscription has closed"}
 				debug.Log("err", "Subscription has closed")
 				return
 			}
@@ -151,8 +135,7 @@ func (cr *ChatRoom) SubLoop() {
 			// Unmarshal the message data into a ChatMessage
 			err = json.Unmarshal(message.Data, cm)
 			if err != nil {
-				cr.Logs <- chatlog{logprefix: "suberr", logmsg: "could not unmarshal JSON"}
-				// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Could not unmarshal JSON")
+				debug.Log("err", "Could not unmarshal JSON")
 				continue
 			}
 			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")

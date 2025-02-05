@@ -28,12 +28,9 @@ type P2P struct {
 type ChatRoom struct {
 	Inbound   chan models.Message
 	Outbound  chan string
-	Logs      chan chatlog
 	PeerJoin  chan peer.ID
 	PeerLeave chan peer.ID
 	PeerIDs   chan []peer.ID
-	RoomName  string
-	UserName  string
 	selfid    peer.ID
 	psctx     context.Context
 	pscancel  context.CancelFunc

@@ -20,9 +20,8 @@ func (network *Network) ConnectToNetwork() {
 	debug.Log("server", "Connected to Service Peers")
 
 	// Join the chat room
-	network.ChatRoom, _ = JoinChatRoom(network.P2p, "username")
-	debug.Log("server", fmt.Sprintf("Joined the '%s' chatroom as '%s'", network.ChatRoom.RoomName, network.ChatRoom.UserName))
-
+	network.ChatRoom, _ = JoinChatRoom(network.P2p)
+	debug.Log("server", "Joined the chatroom")
 	// Wait for network setup to complete
 	time.Sleep(time.Second * 5)
 	debug.Log("server", "Connected to Service Peers")
