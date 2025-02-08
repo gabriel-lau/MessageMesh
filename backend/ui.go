@@ -16,12 +16,15 @@ func UIDataLoop(network Network, ctx context.Context) {
 		runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
 		for {
 			select {
-			case msg := <-network.PubSubService.Inbound:
-				runtime.EventsEmit(ctx, "getMessage", msg)
-				debug.Log("ui", "Message: "+msg.Message)
+			// case msg := <-network.PubSubService.Inbound:
+			// 	runtime.EventsEmit(ctx, "getMessage", msg)
+			// 	debug.Log("ui", "Message: "+msg.Message)
 			case peerIDs := <-network.PubSubService.PeerIDs:
 				runtime.EventsEmit(ctx, "getPeerList", peerIDs)
 				debug.Log("ui", "Peers: "+string(len(peerIDs)))
+			case <-network.ConsensusService.LatestBlock:
+				runtime.EventsEmit(ctx, "getBlockchain", network.ConsensusService.LatestBlock)
+				debug.Log("ui", "Blockchain: "+string(len(network.ConsensusService.LatestBlock)))
 			}
 		}
 	}

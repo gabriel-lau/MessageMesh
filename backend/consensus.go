@@ -128,9 +128,10 @@ func StartConsensus(network *Network) {
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
 	consensusService := &ConsensusService{
-		Raft:      raftInstance,
-		Actor:     actor,
-		Consensus: raftconsensus,
+		LatestBlock: make(chan models.Block),
+		Raft:        raftInstance,
+		Actor:       actor,
+		Consensus:   raftconsensus,
 	}
 	network.ConsensusService = consensusService
 
@@ -203,7 +204,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			default:
 				debug.Log("blockchain", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
 			}
-			network.ConsensusService.Blockchain <- models.Block{
+			network.ConsensusService.LatestBlock <- models.Block{
 				Index:     latestBlock.Index,
 				Timestamp: latestBlock.Timestamp,
 				PrevHash:  latestBlock.PrevHash,
