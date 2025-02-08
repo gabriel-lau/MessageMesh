@@ -224,10 +224,12 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
 
 		case message := <-network.PubSubService.Outbound:
+			debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
 			addMessageBlock(network, message, raftconsensus, actor)
 
 		// Message inbound or outbound from pubsub
 		case message := <-network.PubSubService.Inbound:
+			debug.Log("raft", fmt.Sprintf("Inbound message: %s", message.Message))
 			addMessageBlock(network, message, raftconsensus, actor)
 		}
 	}
@@ -252,7 +254,6 @@ func addMessageBlock(network *Network, message models.Message, raftconsensus *li
 			debug.Log("err", fmt.Sprintf("Failed to commit block: %s", err))
 		}
 	}
-
 }
 
 // func waitForLeader(r *raft.Raft) {
