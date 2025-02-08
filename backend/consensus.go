@@ -132,16 +132,18 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
 
-	go networkLoop(network, raftInstance)
-
-	go blockchainLoop(network, raftInstance, raftconsensus, actor)
-
-	return &ConsensusService{
+	consensusService := &ConsensusService{
 		LatestBlock: make(chan models.Block),
 		Raft:        raftInstance,
 		Actor:       actor,
 		Consensus:   raftconsensus,
-	}, nil
+	}
+
+	go networkLoop(network, raftInstance)
+
+	go blockchainLoop(network, raftInstance, raftconsensus, actor)
+
+	return consensusService, nil
 }
 
 func networkLoop(network *Network, raftInstance *raft.Raft) {
