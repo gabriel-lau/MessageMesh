@@ -29,11 +29,11 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	switch o.Type {
 	case "ADD_MESSAGE_BLOCK":
 		newBlock := currentState.Blockchain.AddMessageBlock(o.Message)
-		debug.Log("blockchain", fmt.Sprintf("New message block added: %d", newBlock.Index))
+		debug.Log("raft", fmt.Sprintf("New message block added: %d", newBlock.Index))
 
 	case "ADD_ACCOUNT_BLOCK":
 		newBlock := currentState.Blockchain.AddAccountBlock(o.Account)
-		debug.Log("blockchain", fmt.Sprintf("New account block added: %d", newBlock.Index))
+		debug.Log("raft", fmt.Sprintf("New account block added: %d", newBlock.Index))
 	}
 
 	return currentState, nil
@@ -187,26 +187,26 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		case <-raftconsensus.Subscribe():
 			newState, _ := raftconsensus.GetCurrentState()
 			blockchain := newState.(*raftState).Blockchain
-			debug.Log("blockchain", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
+			debug.Log("raft", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
 			latestBlock := blockchain.GetLatestBlock()
 
 			// Type assertion to access specific data
 			switch latestBlock.BlockType {
 			case "message":
 				if messageData, ok := latestBlock.Data.(*models.MessageData); ok {
-					debug.Log("blockchain", fmt.Sprintf("Latest message from: %s", messageData.Message.Sender))
-					debug.Log("blockchain", fmt.Sprintf("Latest message: %s", messageData.Message.Message))
+					debug.Log("raft", fmt.Sprintf("Latest message from: %s", messageData.Message.Sender))
+					debug.Log("raft", fmt.Sprintf("Latest message: %s", messageData.Message.Message))
 				}
 			case "account":
 				if accountData, ok := latestBlock.Data.(*models.AccountData); ok {
-					debug.Log("blockchain", fmt.Sprintf("Latest account: %s", accountData.Account.Username))
+					debug.Log("raft", fmt.Sprintf("Latest account: %s", accountData.Account.Username))
 				}
 			case "firstMessage":
 				if firstMessageData, ok := latestBlock.Data.(*models.FirstMessageData); ok {
-					debug.Log("blockchain", fmt.Sprintf("Latest first message: %s", firstMessageData.FirstMessage.SymetricKey))
+					debug.Log("raft", fmt.Sprintf("Latest first message: %s", firstMessageData.FirstMessage.SymetricKey))
 				}
 			default:
-				debug.Log("blockchain", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
+				debug.Log("raft", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
 			}
 			network.ConsensusService.LatestBlock <- models.Block{
 				Index:     latestBlock.Index,
@@ -219,14 +219,14 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
+			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
 
 		case <-network.PubSubService.Outbound:
 			debug.Log("raft", "Outbound message received")
 
 		case message := <-network.PubSubService.Inbound:
-			debug.Log("blockchain", fmt.Sprintf("Received message: %s", message.Message))
-
 			if actor.IsLeader() {
+				debug.Log("raft", fmt.Sprintf("Adding message block: %s", message.Message))
 				// Create a message block using the new structure
 				op := &raftOP{
 					Type: "ADD_MESSAGE_BLOCK",
