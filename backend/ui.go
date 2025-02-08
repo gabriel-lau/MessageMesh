@@ -31,5 +31,14 @@ func UIDataLoop(network Network, ctx context.Context) {
 				}
 			}
 		}
+	} else {
+		for {
+			select {
+			case block := <-network.ConsensusService.LatestBlock:
+				debug.Log("ui", "Block: "+block.BlockType)
+			case <-ctx.Done():
+				return
+			}
+		}
 	}
 }

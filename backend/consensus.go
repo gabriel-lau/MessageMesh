@@ -223,30 +223,36 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			debug.Log("raft", "Leader changed")
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
 
-		case <-network.PubSubService.Outbound:
-			debug.Log("raft", "Outbound message received")
+		case message := <-network.PubSubService.Outbound:
+			addMessageBlock(network, message, raftconsensus, actor)
 
+		// Message inbound or outbound from pubsub
 		case message := <-network.PubSubService.Inbound:
-			if actor.IsLeader() {
-				debug.Log("raft", fmt.Sprintf("Adding message block: %s", message.Message))
-				// Create a message block using the new structure
-				op := &raftOP{
-					Type: "ADD_MESSAGE_BLOCK",
-					Message: &models.Message{
-						Sender:    message.Sender,
-						Receiver:  message.Receiver,
-						Message:   message.Message,
-						Timestamp: time.Now().Format(time.RFC3339),
-					},
-				}
-
-				_, err := raftconsensus.CommitOp(op)
-				if err != nil {
-					debug.Log("err", fmt.Sprintf("Failed to commit block: %s", err))
-				}
-			}
+			addMessageBlock(network, message, raftconsensus, actor)
 		}
 	}
+}
+
+func addMessageBlock(network *Network, message models.Message, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
+	if actor.IsLeader() {
+		debug.Log("raft", fmt.Sprintf("Adding message block: %s", message.Message))
+		// Create a message block using the new structure
+		op := &raftOP{
+			Type: "ADD_MESSAGE_BLOCK",
+			Message: &models.Message{
+				Sender:    message.Sender,
+				Receiver:  message.Receiver,
+				Message:   message.Message,
+				Timestamp: time.Now().Format(time.RFC3339),
+			},
+		}
+
+		_, err := raftconsensus.CommitOp(op)
+		if err != nil {
+			debug.Log("err", fmt.Sprintf("Failed to commit block: %s", err))
+		}
+	}
+
 }
 
 // func waitForLeader(r *raft.Raft) {

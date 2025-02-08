@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"MessageMesh/backend/models"
 	"MessageMesh/debug"
 	"fmt"
 	"time"
@@ -39,5 +40,10 @@ func (network *Network) ConnectToNetwork() {
 }
 
 func (network *Network) SendMessage(message string) {
-	network.PubSubService.Outbound <- message
+	network.PubSubService.Outbound <- models.Message{
+		Sender:    network.PubSubService.SelfID().String(),
+		Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
+		Message:   message,
+		Timestamp: time.Now().Format(time.RFC3339),
+	}
 }

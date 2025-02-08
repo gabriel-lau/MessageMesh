@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -38,7 +37,7 @@ func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 	// Create a ChatRoom object
 	pubsubservice := &PubSubService{
 		Inbound:   make(chan models.Message),
-		Outbound:  make(chan string),
+		Outbound:  make(chan models.Message),
 		PeerJoin:  make(chan peer.ID),
 		PeerLeave: make(chan peer.ID),
 
@@ -75,15 +74,9 @@ func (pubSubService *PubSubService) PubLoop() {
 
 		case message := <-pubSubService.Outbound:
 			// Create a ChatMessage
-			m := models.Message{
-				Sender:    pubSubService.selfid.Pretty(),
-				Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
-				Message:   message,
-				Timestamp: time.Now().Format("2006-01-02 15:04:05"),
-			}
 
 			// Marshal the ChatMessage into a JSON
-			messagebytes, err := json.Marshal(m)
+			messagebytes, err := json.Marshal(message)
 			if err != nil {
 				debug.Log("err", "Could not marshal JSON")
 				continue

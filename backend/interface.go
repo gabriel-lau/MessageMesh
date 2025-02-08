@@ -41,7 +41,7 @@ type PubSubService struct {
 	// Listen to new messages
 	Inbound chan models.Message
 	// Send messages
-	Outbound chan string
+	Outbound chan models.Message
 	// Listen to new peers
 	PeerJoin chan peer.ID
 	// Listen to peer leave
