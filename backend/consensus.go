@@ -40,7 +40,7 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	return currentState, nil
 }
 
-func StartConsensus(network *Network) {
+func StartConsensus(network *Network) (*ConsensusService, error) {
 	// Initialize blockchain with genesis block
 	initialState := &raftState{
 		Blockchain: models.Blockchain{
@@ -73,6 +73,7 @@ func StartConsensus(network *Network) {
 	transport, err := libp2praft.NewLibp2pTransport(network.P2pService.Host, 3*time.Second)
 	if err != nil {
 		debug.Log("err", fmt.Sprintf("Failed to create LibP2P transport: %s", err))
+		return nil, err
 	}
 	// --
 
@@ -96,6 +97,7 @@ func StartConsensus(network *Network) {
 	snapshots, err := raft.NewFileSnapshotStore(raftTmpFolder, 3, nil)
 	if err != nil {
 		debug.Log("err", fmt.Sprintf("Failed to create snapshot store: %s", err))
+		return nil, err
 	}
 
 	// -- Log store and stable store: we use inmem.
@@ -107,6 +109,7 @@ func StartConsensus(network *Network) {
 	bootstrapped, err := raft.HasExistingState(logStore, logStore, snapshots)
 	if err != nil {
 		debug.Log("err", fmt.Sprintf("Failed to check existing state: %s", err))
+		return nil, err
 	}
 
 	// Only bootstrap if we're the first node (no peers)
@@ -115,6 +118,7 @@ func StartConsensus(network *Network) {
 		err := raft.BootstrapCluster(config, logStore, logStore, snapshots, transport, serverConfig)
 		if err != nil {
 			debug.Log("err", fmt.Sprintf("Failed to bootstrap cluster: %s", err))
+			return nil, err
 		}
 	} else {
 		debug.Log("raft", "Joining existing cluster")
@@ -123,21 +127,22 @@ func StartConsensus(network *Network) {
 	raftInstance, err := raft.NewRaft(config, raftconsensus.FSM(), logStore, logStore, snapshots, transport)
 	if err != nil {
 		fmt.Println(err)
+		return nil, err
 	}
 
 	actor := libp2praft.NewActor(raftInstance)
 	raftconsensus.SetActor(actor)
-	consensusService := &ConsensusService{
-		LatestBlock: make(chan models.Block),
-		Raft:        raftInstance,
-		Actor:       actor,
-		Consensus:   raftconsensus,
-	}
-	network.ConsensusService = consensusService
 
 	go networkLoop(network, raftInstance)
 
 	go blockchainLoop(network, raftInstance, raftconsensus, actor)
+
+	return &ConsensusService{
+		LatestBlock: make(chan models.Block),
+		Raft:        raftInstance,
+		Actor:       actor,
+		Consensus:   raftconsensus,
+	}, nil
 }
 
 func networkLoop(network *Network, raftInstance *raft.Raft) {

@@ -20,6 +20,9 @@ func NewApp() *App {
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
+	// Start progress
+	a.network.Progress = backend.NewProgress()
+
 	a.ctx = ctx
 
 	// Start the network, connect to peers and join the blockchain

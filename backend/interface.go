@@ -20,6 +20,8 @@ type Network struct {
 	PubSubService *PubSubService
 	// Consensus Service (Raft consensus)
 	ConsensusService *ConsensusService
+	// Progress
+	Progress *Progress
 }
 
 type P2PService struct {
@@ -67,4 +69,59 @@ type ConsensusService struct {
 	Actor *libp2praft.Actor
 	// Libp2p Raft consensus
 	Consensus *libp2praft.Consensus
+}
+
+type Progress struct {
+	NetworkConnected chan bool
+	PubSubJoined     chan bool
+	BlockchainLoaded chan bool
+}
+
+// NewProgress creates a new Progress tracker with buffered channels
+func NewProgress() *Progress {
+	return &Progress{
+		NetworkConnected: make(chan bool, 1),
+		PubSubJoined:     make(chan bool, 1),
+		BlockchainLoaded: make(chan bool, 1),
+	}
+}
+
+// GetCurrentStep returns the current step in the startup process
+// This should be called in a separate goroutine
+func (p *Progress) GetCurrentStep() string {
+	select {
+	case <-p.NetworkConnected:
+		select {
+		case <-p.PubSubJoined:
+			select {
+			case <-p.BlockchainLoaded:
+				return "Application ready"
+			default:
+				return "Loading blockchain data..."
+			}
+		default:
+			return "Joining peer-to-peer network..."
+		}
+	default:
+		return "Connecting to network..."
+	}
+}
+
+// CompleteStep marks a step as complete by sending true to its channel
+func (p *Progress) CompleteStep(step string) {
+	switch step {
+	case "network":
+		p.NetworkConnected <- true
+	case "pubsub":
+		p.PubSubJoined <- true
+	case "blockchain":
+		p.BlockchainLoaded <- true
+	}
+}
+
+// WaitForCompletion blocks until all steps are completed
+func (p *Progress) WaitForCompletion() {
+	<-p.NetworkConnected
+	<-p.PubSubJoined
+	<-p.BlockchainLoaded
 }
