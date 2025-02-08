@@ -84,11 +84,11 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 		config.Logger = nil
 	}
 	config.LocalID = raft.ServerID(network.P2pService.Host.ID().String())
-	config.HeartbeatTimeout = 2000 * time.Millisecond // Increase heartbeat timeout
-	config.ElectionTimeout = 2000 * time.Millisecond  // Increase election timeout
-	config.CommitTimeout = 1000 * time.Millisecond    // Increase commit timeout
-	config.LeaderLeaseTimeout = 2000 * time.Millisecond
-	config.SnapshotInterval = 20 * time.Second
+	config.HeartbeatTimeout = 1000 * time.Millisecond // Increase heartbeat timeout
+	config.ElectionTimeout = 1000 * time.Millisecond  // Increase election timeout
+	config.CommitTimeout = 500 * time.Millisecond     // Increase commit timeout
+	config.LeaderLeaseTimeout = 1000 * time.Millisecond
+	config.SnapshotInterval = 10 * time.Second
 	// --
 
 	// -- SnapshotStore
