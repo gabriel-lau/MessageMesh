@@ -17,9 +17,6 @@ func UIDataLoop(network Network, ctx context.Context) {
 		runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
 		for {
 			select {
-			// case msg := <-network.PubSubService.Inbound:
-			// 	runtime.EventsEmit(ctx, "getMessage", msg)
-			// 	debug.Log("ui", "Message: "+msg.Message)
 			case peerIDs := <-network.PubSubService.PeerIDs:
 				runtime.EventsEmit(ctx, "getPeerList", peerIDs)
 				debug.Log("ui", "Peers: "+string(len(peerIDs)))
