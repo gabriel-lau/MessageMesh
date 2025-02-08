@@ -118,7 +118,6 @@ func (pubSubService *PubSubService) SubLoop() {
 			// Check if message is from self
 			if message.ReceivedFrom == pubSubService.selfid {
 				debug.Log("pubsub", "Sub Message from self")
-				continue
 			} else {
 				debug.Log("pubsub", "Sub Message from other peer")
 			}

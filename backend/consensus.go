@@ -225,9 +225,8 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 
 		case message := <-network.PubSubService.Outbound:
 			debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
-			addMessageBlock(network, message, raftconsensus, actor)
+			// addMessageBlock(network, message, raftconsensus, actor)
 
-		// Message inbound or outbound from pubsub
 		case message := <-network.PubSubService.Inbound:
 			debug.Log("raft", fmt.Sprintf("Inbound message: %s", message.Message))
 			addMessageBlock(network, message, raftconsensus, actor)
