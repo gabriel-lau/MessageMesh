@@ -50,23 +50,42 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	// Create the consensus with blockchain state
 	raftconsensus := libp2praft.NewOpLog(initialState, &raftOP{})
 
+	// Get peer list and ensure we have peers
 	pids := network.PubSubService.PeerList()
-	// pids := network.P2p.Host.Peerstore().Peers()
-	// -- Create Raft servers configuration
+	debug.Log("raft", fmt.Sprintf("Initial peer count: %d", len(pids)))
+
+	// Wait for peers if we're not the first node
+	if len(pids) == 0 {
+		debug.Log("raft", "Waiting for peers...")
+		// Wait for up to 30 seconds for peers
+		for i := 0; i < 30; i++ {
+			time.Sleep(time.Second)
+			pids = network.PubSubService.PeerList()
+			if len(pids) > 0 {
+				debug.Log("raft", fmt.Sprintf("Found peers after waiting: %d peers", len(pids)))
+				break
+			}
+		}
+	}
+
+	// Add self to peer list
 	pids = append(pids, network.P2pService.Host.ID())
+
+	// Create Raft servers configuration
 	servers := make([]raft.Server, len(pids))
+	debug.Log("raft", fmt.Sprintf("Configuring Raft with %d peers", len(pids)))
 	for i, pid := range pids {
 		servers[i] = raft.Server{
 			Suffrage: raft.Voter,
 			ID:       raft.ServerID(pid.String()),
 			Address:  raft.ServerAddress(pid.String()),
 		}
-		debug.Log("raft", fmt.Sprintf("Server: %v", servers[i]))
+		debug.Log("raft", fmt.Sprintf("Added server to config: ID=%s", pid.String()))
 	}
+
 	serverConfig := raft.Configuration{
 		Servers: servers,
 	}
-	// --
 
 	// -- Create LibP2P transports Raft
 	transport, err := libp2praft.NewLibp2pTransport(network.P2pService.Host, 3*time.Second)
@@ -111,16 +130,22 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 		return nil, err
 	}
 
-	// Only bootstrap if we're the first node (no peers)
-	if !bootstrapped && len(servers) <= 1 {
-		debug.Log("raft", "Bootstrapping new cluster")
+	// Modify the bootstrap logic
+	if !bootstrapped {
+		debug.Log("raft", fmt.Sprintf("No existing state found. Peers count: %d", len(pids)))
+		if len(pids) <= 1 {
+			debug.Log("raft", "Bootstrapping as first node in new cluster")
+		} else {
+			debug.Log("raft", "Joining existing cluster as new node")
+		}
+
 		err := raft.BootstrapCluster(config, logStore, logStore, snapshots, transport, serverConfig)
 		if err != nil {
 			debug.Log("err", fmt.Sprintf("Failed to bootstrap cluster: %s", err))
 			return nil, err
 		}
 	} else {
-		debug.Log("raft", "Joining existing cluster")
+		debug.Log("raft", "Found existing state, rejoining cluster")
 	}
 
 	raftInstance, err := raft.NewRaft(config, raftconsensus.FSM(), logStore, logStore, snapshots, transport)
@@ -134,6 +159,7 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 
 	consensusService := &ConsensusService{
 		LatestBlock: make(chan models.Block),
+		Blockchain:  &initialState.Blockchain,
 		Raft:        raftInstance,
 		Actor:       actor,
 		Consensus:   raftconsensus,
@@ -222,10 +248,6 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
-
-		case message := <-network.PubSubService.Outbound:
-			debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
-			// addMessageBlock(network, message, raftconsensus, actor)
 
 		case message := <-network.PubSubService.Inbound:
 			debug.Log("raft", fmt.Sprintf("Inbound message: %s", message.Message))

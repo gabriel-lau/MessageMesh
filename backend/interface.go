@@ -63,6 +63,8 @@ type PubSubService struct {
 type ConsensusService struct {
 	// Listen to latest block in blockchain
 	LatestBlock chan models.Block
+	// Blockchain
+	Blockchain *models.Blockchain
 	// Raft instance
 	Raft *raft.Raft
 	// Libp2p Raft actor

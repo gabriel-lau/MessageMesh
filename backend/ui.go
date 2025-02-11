@@ -26,6 +26,12 @@ func UIDataLoop(network Network, ctx context.Context) {
 					runtime.EventsEmit(ctx, "getMessage", block.Data.(*models.MessageData).Message)
 					debug.Log("ui", "Message: "+block.Data.(*models.MessageData).Message.Message)
 				}
+				if block.BlockType == "account" {
+					runtime.EventsEmit(ctx, "getAccount", block.Data.(*models.AccountData).Account)
+					debug.Log("ui", "Account: "+block.Data.(*models.AccountData).Account.Username)
+				}
+				// Get the blockchain
+				runtime.EventsEmit(ctx, "getBlockchain", network.ConsensusService.Blockchain.Chain)
 			}
 		}
 	} else {
