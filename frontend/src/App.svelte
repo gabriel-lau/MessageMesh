@@ -17,6 +17,14 @@
     console.log(blockchain);
     blockchain = blockchain;
   });
+  Wails.EventsOn("getMessages", (messages) => {
+    console.log(messages);
+    messages = messages;
+  });
+  Wails.EventsOn("getAccounts", (accounts) => {
+    console.log(accounts);
+    accounts = accounts;
+  });
 </script>
 
 <main>

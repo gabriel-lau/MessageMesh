@@ -88,7 +88,7 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	}
 
 	// -- Create LibP2P transports Raft
-	transport, err := libp2praft.NewLibp2pTransport(network.P2pService.Host, 3*time.Second)
+	transport, err := libp2praft.NewLibp2pTransport(network.P2pService.Host, 10*time.Second)
 	if err != nil {
 		debug.Log("err", fmt.Sprintf("Failed to create LibP2P transport: %s", err))
 		return nil, err
@@ -205,6 +205,7 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 				}
 			}
 			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
+
 		}
 	}
 }
