@@ -8,6 +8,4 @@ export function GetBlockchain():Promise<Array<models.Block>>;
 
 export function GetMessages():Promise<Array<models.Message>>;
 
-export function Greet(arg1:string):Promise<string>;
-
-export function SendMessage(arg1:string):Promise<void>;
+export function SendMessage(arg1:string,arg2:string):Promise<void>;

@@ -3,19 +3,19 @@
   import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
   import { PaperPlaneOutline } from 'flowbite-svelte-icons';
   import { SendMessage } from '../../wailsjs/go/main/App.js';
-  import * as Wails from '../../wailsjs/runtime/runtime.js';
+  import { models } from '../../wailsjs/go/models.js';
+  let { userPeerID = $bindable(), selectedPeer = $bindable(), messages = $bindable() } = $props();
+  
+  // Computed property to filter messages for the current conversation
+  let filteredMessages = $derived(messages.filter((msg: models.Message) => 
+    (msg.sender === selectedPeer && msg.receiver === userPeerID) || 
+    (msg.sender === userPeerID && msg.receiver === selectedPeer)
+  ))
 
-  let { userPeerID = $bindable() } = $props();
   let message = $state('');
-  // let chatService = new backend.ChatService();
-  Wails.EventsOn('getMessage', (newMessage) => {
-    messageList.push(newMessage);
-    console.log(messageList);
-  });
-  let messageList = $state([{}]);
-
   function sendMessage(): void {
-    SendMessage(message);
+    if (!selectedPeer) return; // Don't send if no peer is selected
+    SendMessage(message, selectedPeer);
     message = '';
   }
 </script>
@@ -24,7 +24,9 @@
   <div class="flex-none">
     <Navbar>
       <NavBrand href="#">
-        <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Flowbite</span>
+        <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">
+          {selectedPeer || 'Select a chat'}
+        </span>
       </NavBrand>
       <NavHamburger />
       <NavUl>
@@ -36,8 +38,8 @@
   </div>
   <div class="flex-auto flex flex-col items-end h-full overflow-y-auto">
     <!-- Check if message is from self or other -->
-    {#each messageList as message}
-      {#if message.sender === userPeerID}
+    {#each filteredMessages as message}
+      {#if message.sender === userPeerID }
       <div class="flex w-full justify-end p-3">
         <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 text-white bg-primary-700 dark:bg-primary-800 rounded-l-xl rounded-br-xl">
           <div class="flex items-center space-x-2 rtl:space-x-reverse">
@@ -62,6 +64,8 @@
       {/if}
     {/each}
   </div>
+
+  <!-- Add your message input area here -->
   <div class="flex-none">
     <label for="chat" class="sr-only">Your message</label>
     <div class="flex items-center px-3 py-2 rounded-none bg-gray-50 dark:bg-gray-700">

@@ -1,38 +1,37 @@
 <script lang="ts">
   import './app.css';
-  import logo from './assets/images/logo-universal.png';
-  import { Greet } from '../wailsjs/go/main/App.js';
   import NavigationRailComponent from './components/NavigationRailComponent.svelte';
   import ChatListComponent from './components/ChatListComponent.svelte';
   import ChatComponent from './components/ChatComponent.svelte';
   import * as Wails from '../wailsjs/runtime/runtime.js';
-  import * as models from '../wailsjs/go/models.js';
+  import { models } from '../wailsjs/go/models.js';
 
   let userPeerID = $state('');
-  Wails.EventsOn("getUserPeerID", (peerID: string) => {
-    userPeerID = peerID;
+  Wails.EventsOn("getUserPeerID", (data: string) => {
+    userPeerID = data;
   });
-  let blockchain = $state([]);
-  Wails.EventsOn("getBlockchain", (blockchain) => {
-    console.log(blockchain);
-    blockchain = blockchain;
+  let blockchain = $state<models.Block[]>([]);
+  Wails.EventsOn("getBlockchain", (data: models.Block[]) => {
+    blockchain = data;
   });
-  Wails.EventsOn("getMessages", (messages) => {
-    console.log(messages);
-    messages = messages;
+  let messages = $state<models.Message[]>([]);
+  Wails.EventsOn("getMessages", (data: models.Message[]) => {
+    messages = data;
   });
-  Wails.EventsOn("getAccounts", (accounts) => {
-    console.log(accounts);
-    accounts = accounts;
+  let accounts = $state<models.Account[]>([]);
+  Wails.EventsOn("getAccounts", (data: models.Account[]) => {
+    accounts = data;
   });
+
+  let selectedPeer = $state('');
 </script>
 
 <main>
   <div class="flex w-screen h-screen bg-primary-50 dark:bg-gray-900">
     <NavigationRailComponent></NavigationRailComponent>
     <div class="flex flex-row w-full">
-      <ChatListComponent bind:userPeerID></ChatListComponent>
-      <ChatComponent bind:userPeerID></ChatComponent>
+      <ChatListComponent bind:userPeerID bind:selectedPeer bind:accounts></ChatListComponent>
+      <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
     </div>
   </div>
   <!-- <img alt="Wails logo" id="logo" src="{logo}"> -->

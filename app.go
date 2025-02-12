@@ -4,7 +4,6 @@ import (
 	backend "MessageMesh/backend"
 	"MessageMesh/backend/models"
 	"context"
-	"fmt"
 )
 
 // App struct
@@ -31,11 +30,6 @@ func (a *App) startup(ctx context.Context) {
 
 	// Start the UI loop
 	go backend.UIDataLoop(a.network, a.ctx)
-}
-
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
 
 // CHATCOMPONET
