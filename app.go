@@ -39,8 +39,8 @@ func (a *App) Greet(name string) string {
 }
 
 // CHATCOMPONET
-func (a *App) SendMessage(message string) {
-	a.network.SendMessage(message)
+func (a *App) SendMessage(message string, receiver string) {
+	a.network.SendMessage(message, receiver)
 }
 
 func (a *App) GetBlockchain() []*models.Block {

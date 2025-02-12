@@ -8,6 +8,7 @@ import (
 	"MessageMesh/backend/models"
 
 	"github.com/hashicorp/raft"
+	raftboltdb "github.com/hashicorp/raft-boltdb"
 	consensus "github.com/libp2p/go-libp2p-consensus"
 	libp2praft "github.com/libp2p/go-libp2p-raft"
 )
@@ -80,7 +81,8 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 		return nil, err
 	}
 
-	logStore := raft.NewInmemStore()
+	// logStore := raft.NewInmemStore()
+	logStore, _ := raftboltdb.NewBoltStore("db/raft.db")
 
 	// Check if we're the first node
 	isFirstNode := len(pids) <= 1
@@ -109,6 +111,7 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 
 	consensusService := &ConsensusService{
 		LatestBlock: make(chan models.Block),
+		Blockchain:  &initialState.Blockchain,
 		Raft:        raftInstance,
 		Actor:       actor,
 		Consensus:   raftconsensus,

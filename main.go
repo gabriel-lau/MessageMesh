@@ -4,7 +4,6 @@ import (
 	debug "MessageMesh/debug"
 	"context"
 	"embed"
-	"time"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -21,10 +20,8 @@ func main() {
 		app := NewApp()
 		ctx := context.Background()
 		app.startup(ctx)
-		for {
-			app.SendMessage("Hello I am " + debug.Username)
-			time.Sleep(30 * time.Second)
-		}
+		// Keep the app running
+		select {}
 	}
 
 	debug.Log("main", "Running in GUI mode")

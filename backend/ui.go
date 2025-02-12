@@ -4,6 +4,7 @@ import (
 	"MessageMesh/backend/models"
 	"MessageMesh/debug"
 	"context"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -56,6 +57,8 @@ func UIDataLoop(network Network, ctx context.Context) {
 			select {
 			case block := <-network.ConsensusService.LatestBlock:
 				debug.Log("ui", "Block: "+block.BlockType)
+			case <-time.After(30 * time.Second):
+				network.SendMessage("Hello I am "+debug.Username, "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
 			case <-ctx.Done():
 				return
 			}
