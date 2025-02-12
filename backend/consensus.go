@@ -3,7 +3,6 @@ package backend
 import (
 	"MessageMesh/debug"
 	"fmt"
-	"io"
 	"time"
 
 	"MessageMesh/backend/models"
@@ -51,8 +50,6 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	raftconsensus := libp2praft.NewOpLog(initialState, &raftOP{})
 
 	pids := network.PubSubService.PeerList()
-	// pids := network.P2p.Host.Peerstore().Peers()
-	// -- Create Raft servers configuration
 	pids = append(pids, network.P2pService.Host.ID())
 	servers := make([]raft.Server, len(pids))
 	for i, pid := range pids {
@@ -61,72 +58,50 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 			ID:       raft.ServerID(pid.String()),
 			Address:  raft.ServerAddress(pid.String()),
 		}
-		debug.Log("raft", fmt.Sprintf("Server: %v", servers[i]))
 	}
 	serverConfig := raft.Configuration{
 		Servers: servers,
 	}
-	// --
 
-	// -- Create LibP2P transports Raft
 	transport, err := libp2praft.NewLibp2pTransport(network.P2pService.Host, 3*time.Second)
 	if err != nil {
-		debug.Log("err", fmt.Sprintf("Failed to create LibP2P transport: %s", err))
 		return nil, err
 	}
-	// --
 
-	// -- Configuration
-	raftQuiet := false
 	config := raft.DefaultConfig()
-	if raftQuiet {
-		config.LogOutput = io.Discard
-		config.Logger = nil
-	}
 	config.LocalID = raft.ServerID(network.P2pService.Host.ID().String())
-	config.HeartbeatTimeout = 1000 * time.Millisecond // Increase heartbeat timeout
-	config.ElectionTimeout = 1000 * time.Millisecond  // Increase election timeout
-	config.CommitTimeout = 500 * time.Millisecond     // Increase commit timeout
+	config.HeartbeatTimeout = 1000 * time.Millisecond
+	config.ElectionTimeout = 1000 * time.Millisecond
+	config.CommitTimeout = 500 * time.Millisecond
 	config.LeaderLeaseTimeout = 1000 * time.Millisecond
-	config.SnapshotInterval = 10 * time.Second
-	// --
 
-	// -- SnapshotStore
-	var raftTmpFolder = "db/raft_testing_tmp"
-	snapshots, err := raft.NewFileSnapshotStore(raftTmpFolder, 3, nil)
+	snapshots, err := raft.NewFileSnapshotStore("db/raft_testing_tmp", 3, nil)
 	if err != nil {
-		debug.Log("err", fmt.Sprintf("Failed to create snapshot store: %s", err))
 		return nil, err
 	}
 
-	// -- Log store and stable store: we use inmem.
 	logStore := raft.NewInmemStore()
-	// logStore, _ := raftboltdb.NewBoltStore("db/raft.db")
-	// --
 
-	// -- Boostrap everything if necessary
-	bootstrapped, err := raft.HasExistingState(logStore, logStore, snapshots)
-	if err != nil {
-		debug.Log("err", fmt.Sprintf("Failed to check existing state: %s", err))
-		return nil, err
-	}
+	// Check if we're the first node
+	isFirstNode := len(pids) <= 1
 
-	// Only bootstrap if we're the first node (no peers)
-	if !bootstrapped && len(servers) <= 1 {
-		debug.Log("raft", "Bootstrapping new cluster")
-		err := raft.BootstrapCluster(config, logStore, logStore, snapshots, transport, serverConfig)
-		if err != nil {
-			debug.Log("err", fmt.Sprintf("Failed to bootstrap cluster: %s", err))
-			return nil, err
+	// Only bootstrap if we're the first node
+	if isFirstNode {
+		debug.Log("raft", "Bootstrapping new cluster as first node")
+		if err := raft.BootstrapCluster(config, logStore, logStore, snapshots, transport, serverConfig); err != nil {
+			return nil, fmt.Errorf("bootstrap error: %v", err)
 		}
-	} else {
-		debug.Log("raft", "Joining existing cluster")
 	}
 
 	raftInstance, err := raft.NewRaft(config, raftconsensus.FSM(), logStore, logStore, snapshots, transport)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
+	}
+
+	// If we're not the first node, wait for the leader to add us
+	if !isFirstNode {
+		debug.Log("raft", "Waiting to be added to existing cluster...")
+		// The leader will add us through the networkLoop
 	}
 
 	actor := libp2praft.NewActor(raftInstance)
@@ -140,7 +115,6 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	}
 
 	go networkLoop(network, raftInstance)
-
 	go blockchainLoop(network, raftInstance, raftconsensus, actor)
 
 	return consensusService, nil
