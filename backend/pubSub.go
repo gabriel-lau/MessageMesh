@@ -38,14 +38,14 @@ func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 	pubsubservice := &PubSubService{
 		Inbound:   make(chan models.Message),
 		Outbound:  make(chan models.Message),
-		PeerJoin:  make(chan peer.ID),
-		PeerLeave: make(chan peer.ID),
-
-		psctx:    pubsubctx,
-		pscancel: cancel,
-		pstopic:  topic,
-		psub:     sub,
-		selfid:   p2phost.Host.ID(),
+		PeerJoin:  make(chan peer.ID, 10),
+		PeerLeave: make(chan peer.ID, 10),
+		PeerIDs:   make(chan []peer.ID, 10),
+		psctx:     pubsubctx,
+		pscancel:  cancel,
+		pstopic:   topic,
+		psub:      sub,
+		selfid:    p2phost.Host.ID(),
 	}
 
 	// Start the subscribe loop
@@ -148,6 +148,11 @@ func (pubSubService *PubSubService) PeerJoinedLoop() {
 		return
 	}
 
+	// Initialize PeerIDs channel if not already initialized
+	if pubSubService.PeerIDs == nil {
+		pubSubService.PeerIDs = make(chan []peer.ID, 1)
+	}
+
 	for {
 		peerEvent, err := evts.NextPeerEvent(context.Background())
 		if err != nil {
@@ -156,15 +161,39 @@ func (pubSubService *PubSubService) PeerJoinedLoop() {
 		}
 
 		switch peerEvent.Type {
-		case pubsub.PeerJoin: // PeerJoin event
+		case pubsub.PeerJoin:
 			debug.Log("pubsub", fmt.Sprintf("Peer joined: %s", peerEvent.Peer))
-			pubSubService.PeerJoin <- peerEvent.Peer
-			// raftInstance.AddVoter(raft.ServerID(peerEvent.Peer.String()), raft.ServerAddress(peerEvent.Peer.String()), 0, 0)
+			select {
+			case pubSubService.PeerJoin <- peerEvent.Peer:
+				debug.Log("pubsub", fmt.Sprintf("Successfully sent peer join event for: %s", peerEvent.Peer))
+			default:
+				debug.Log("err", fmt.Sprintf("Channel blocked, couldn't send peer join event for: %s", peerEvent.Peer))
+			}
 
-		case pubsub.PeerLeave: // PeerLeave event
+			// Send updated peer list
+			select {
+			case pubSubService.PeerIDs <- pubSubService.PeerList():
+				debug.Log("pubsub", "Sent updated peer list")
+			default:
+				debug.Log("err", "Channel blocked, couldn't send updated peer list")
+			}
+
+		case pubsub.PeerLeave:
 			debug.Log("pubsub", fmt.Sprintf("Peer left: %s", peerEvent.Peer))
-			pubSubService.PeerLeave <- peerEvent.Peer
-			// raftInstance.RemoveServer(raft.ServerID(peerEvent.Peer.String()), 0, 0)
+			select {
+			case pubSubService.PeerLeave <- peerEvent.Peer:
+				debug.Log("pubsub", fmt.Sprintf("Successfully sent peer leave event for: %s", peerEvent.Peer))
+			default:
+				debug.Log("err", fmt.Sprintf("Channel blocked, couldn't send peer leave event for: %s", peerEvent.Peer))
+			}
+
+			// Send updated peer list
+			select {
+			case pubSubService.PeerIDs <- pubSubService.PeerList():
+				debug.Log("pubsub", "Sent updated peer list")
+			default:
+				debug.Log("err", "Channel blocked, couldn't send updated peer list")
+			}
 		}
 	}
 }
