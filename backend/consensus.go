@@ -8,7 +8,6 @@ import (
 	"MessageMesh/backend/models"
 
 	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
 	consensus "github.com/libp2p/go-libp2p-consensus"
 	libp2praft "github.com/libp2p/go-libp2p-raft"
 )
@@ -104,7 +103,6 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	if err != nil {
 		return nil, err
 	}
-
 
 	// -- Log store and stable store: we use inmem.
 	logStore := raft.NewInmemStore()
