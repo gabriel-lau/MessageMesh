@@ -6,11 +6,24 @@
   import ChatListComponent from './components/ChatListComponent.svelte';
   import ChatComponent from './components/ChatComponent.svelte';
   import * as Wails from '../wailsjs/runtime/runtime.js';
-  import * as Main from '../wailsjs/go/main/app.js';
+  import * as models from '../wailsjs/go/models.js';
 
   let userPeerID = $state('');
   Wails.EventsOn("getUserPeerID", (peerID: string) => {
     userPeerID = peerID;
+  });
+  let blockchain = $state([]);
+  Wails.EventsOn("getBlockchain", (blockchain) => {
+    console.log(blockchain);
+    blockchain = blockchain;
+  });
+  Wails.EventsOn("getMessages", (messages) => {
+    console.log(messages);
+    messages = messages;
+  });
+  Wails.EventsOn("getAccounts", (accounts) => {
+    console.log(accounts);
+    accounts = accounts;
   });
 </script>
 

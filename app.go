@@ -2,6 +2,7 @@ package main
 
 import (
 	backend "MessageMesh/backend"
+	"MessageMesh/backend/models"
 	"context"
 	"fmt"
 )
@@ -40,4 +41,28 @@ func (a *App) Greet(name string) string {
 // CHATCOMPONET
 func (a *App) SendMessage(message string) {
 	a.network.SendMessage(message)
+}
+
+func (a *App) GetBlockchain() []*models.Block {
+	return a.network.ConsensusService.Blockchain.Chain
+}
+
+func (a *App) GetMessages() []*models.Message {
+	messages := make([]*models.Message, 0)
+	for _, block := range a.network.ConsensusService.Blockchain.Chain {
+		if block.BlockType == "message" {
+			messages = append(messages, block.Data.(*models.MessageData).Message)
+		}
+	}
+	return messages
+}
+
+func (a *App) GetAccounts() []*models.Account {
+	accounts := make([]*models.Account, 0)
+	for _, block := range a.network.ConsensusService.Blockchain.Chain {
+		if block.BlockType == "account" {
+			accounts = append(accounts, block.Data.(*models.AccountData).Account)
+		}
+	}
+	return accounts
 }

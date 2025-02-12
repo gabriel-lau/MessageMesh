@@ -8,6 +8,7 @@ import (
 	"MessageMesh/backend/models"
 
 	"github.com/hashicorp/raft"
+	raftboltdb "github.com/hashicorp/raft-boltdb"
 	consensus "github.com/libp2p/go-libp2p-consensus"
 	libp2praft "github.com/libp2p/go-libp2p-raft"
 )
@@ -49,9 +50,31 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	// Create the consensus with blockchain state
 	raftconsensus := libp2praft.NewOpLog(initialState, &raftOP{})
 
+	// Get peer list and ensure we have peers
 	pids := network.PubSubService.PeerList()
+
+	debug.Log("raft", fmt.Sprintf("Initial peer count: %d", len(pids)))
+
+	// Wait for peers if we're not the first node
+	if len(pids) == 0 {
+		debug.Log("raft", "Waiting for peers...")
+		// Wait for up to 30 seconds for peers
+		for i := 0; i < 30; i++ {
+			time.Sleep(time.Second)
+			pids = network.PubSubService.PeerList()
+			if len(pids) > 0 {
+				debug.Log("raft", fmt.Sprintf("Found peers after waiting: %d peers", len(pids)))
+				break
+			}
+		}
+	}
+
+	// Add self to peer list
 	pids = append(pids, network.P2pService.Host.ID())
+
+	// Create Raft servers configuration
 	servers := make([]raft.Server, len(pids))
+	debug.Log("raft", fmt.Sprintf("Configuring Raft with %d peers", len(pids)))
 	for i, pid := range pids {
 		servers[i] = raft.Server{
 			Suffrage: raft.Voter,
@@ -59,11 +82,13 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 			Address:  raft.ServerAddress(pid.String()),
 		}
 	}
+
 	serverConfig := raft.Configuration{
 		Servers: servers,
 	}
 
 	transport, err := libp2praft.NewLibp2pTransport(network.P2pService.Host, 3*time.Second)
+
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +105,11 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 		return nil, err
 	}
 
+
+	// -- Log store and stable store: we use inmem.
 	logStore := raft.NewInmemStore()
+	// logStore, _ := raftboltdb.NewBoltStore("db/raft.db")
+	// --
 
 	// Check if we're the first node
 	isFirstNode := len(pids) <= 1
@@ -109,6 +138,7 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 
 	consensusService := &ConsensusService{
 		LatestBlock: make(chan models.Block),
+		Blockchain:  &initialState.Blockchain,
 		Raft:        raftInstance,
 		Actor:       actor,
 		Consensus:   raftconsensus,
@@ -153,6 +183,7 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 				}
 			}
 			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
+
 		}
 	}
 }
@@ -196,10 +227,6 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
-
-		case message := <-network.PubSubService.Outbound:
-			debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
-			// addMessageBlock(network, message, raftconsensus, actor)
 
 		case message := <-network.PubSubService.Inbound:
 			debug.Log("raft", fmt.Sprintf("Inbound message: %s", message.Message))
