@@ -178,6 +178,9 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		select {
 		case <-raftconsensus.Subscribe():
 			newState, _ := raftconsensus.GetCurrentState()
+			debug.Log("raft", fmt.Sprintf("New state: %v", newState))
+			newLogHead, _ := raftconsensus.GetLogHead()
+			debug.Log("raft", fmt.Sprintf("New log head: %v", newLogHead))
 			blockchain := newState.(*raftState).Blockchain
 			debug.Log("raft", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
 			latestBlock := blockchain.GetLatestBlock()

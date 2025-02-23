@@ -12,9 +12,8 @@ import (
 func UIDataLoop(network Network, ctx context.Context) {
 	debug.Log("ui", "Wails events emitter started")
 	// Emit ready event
-	runtime.EventsEmit(ctx, "ready")
 	if !debug.IsHeadless {
-
+		runtime.EventsEmit(ctx, "ready")
 		// Send the user's peer ID once to the frontend and then remove the event listener
 		runtime.EventsEmit(ctx, "getUserPeerID", network.P2pService.Host.ID())
 		runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
@@ -45,7 +44,9 @@ func UIDataLoop(network Network, ctx context.Context) {
 				// Get the messages
 				messages := make([]*models.Message, 0)
 				for _, block := range network.ConsensusService.Blockchain.Chain {
+					debug.Log("ui", "Printing all messages")
 					if block.BlockType == "message" {
+						debug.Log("ui", "Message: "+block.Data.(*models.MessageData).Message.Message)
 						messages = append(messages, block.Data.(*models.MessageData).Message)
 					}
 				}
