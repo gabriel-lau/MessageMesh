@@ -44,10 +44,8 @@ func UIDataLoop(network Network, ctx context.Context) {
 				// Get the messages
 				messages := make([]*models.Message, 0)
 				for _, block := range network.ConsensusService.Blockchain.Chain {
-					debug.Log("ui", "Printing all messages")
 					if block.BlockType == "message" {
-						debug.Log("ui", "Message: "+block.Data.(*models.MessageData).Message.Message)
-						messages = append(messages, block.Data.(*models.MessageData).Message)
+						messages = append(messages, &block.Data.(*models.MessageData).Message)
 					}
 				}
 				debug.Log("ui", "Messages: "+string(len(messages)))
@@ -56,7 +54,7 @@ func UIDataLoop(network Network, ctx context.Context) {
 				accounts := make([]*models.Account, 0)
 				for _, block := range network.ConsensusService.Blockchain.Chain {
 					if block.BlockType == "account" {
-						accounts = append(accounts, block.Data.(*models.AccountData).Account)
+						accounts = append(accounts, &block.Data.(*models.AccountData).Account)
 					}
 				}
 				runtime.EventsEmit(ctx, "getAccounts", accounts)

@@ -45,7 +45,7 @@ func (a *App) GetMessages() []*models.Message {
 	messages := make([]*models.Message, 0)
 	for _, block := range a.network.ConsensusService.Blockchain.Chain {
 		if block.BlockType == "message" {
-			messages = append(messages, block.Data.(*models.MessageData).Message)
+			messages = append(messages, &block.Data.(*models.MessageData).Message)
 		}
 	}
 	return messages
@@ -56,7 +56,7 @@ func (a *App) GetMessagesFromPeer(peer string) []*models.Message {
 	for _, block := range a.network.ConsensusService.Blockchain.Chain {
 		if block.BlockType == "message" {
 			if block.Data.(*models.MessageData).Message.Sender == peer || block.Data.(*models.MessageData).Message.Receiver == peer {
-				messages = append(messages, block.Data.(*models.MessageData).Message)
+				messages = append(messages, &block.Data.(*models.MessageData).Message)
 			}
 		}
 	}
@@ -66,7 +66,7 @@ func (a *App) GetAccounts() []*models.Account {
 	accounts := make([]*models.Account, 0)
 	for _, block := range a.network.ConsensusService.Blockchain.Chain {
 		if block.BlockType == "account" {
-			accounts = append(accounts, block.Data.(*models.AccountData).Account)
+			accounts = append(accounts, &block.Data.(*models.AccountData).Account)
 		}
 	}
 	return accounts

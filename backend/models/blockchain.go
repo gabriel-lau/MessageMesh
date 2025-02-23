@@ -23,7 +23,7 @@ type Block struct {
 
 // MessageData implements BlockData
 type MessageData struct {
-	*Message
+	Message
 }
 
 func (md *MessageData) CalculateDataHash() string {
@@ -31,7 +31,7 @@ func (md *MessageData) CalculateDataHash() string {
 }
 
 type FirstMessageData struct {
-	*FirstMessage
+	FirstMessage
 }
 
 func (md *FirstMessageData) CalculateDataHash() string {
@@ -40,7 +40,7 @@ func (md *FirstMessageData) CalculateDataHash() string {
 
 // AccountData implements BlockData
 type AccountData struct {
-	*Account
+	Account
 }
 
 func (ad *AccountData) CalculateDataHash() string {
@@ -83,7 +83,7 @@ func (bc *Blockchain) GetMessageBlock(index int) *Block {
 	return block
 }
 
-func (bc *Blockchain) AddMessageBlock(message *Message) *Block {
+func (bc *Blockchain) AddMessageBlock(message Message) *Block {
 	prevBlock := bc.Chain[len(bc.Chain)-1]
 	newBlock := &Block{
 		Index:     prevBlock.Index + 1,
@@ -105,7 +105,7 @@ func (bc *Blockchain) GetAccountBlock(index int) *Block {
 	return block
 }
 
-func (bc *Blockchain) AddAccountBlock(account *Account) *Block {
+func (bc *Blockchain) AddAccountBlock(account Account) *Block {
 	prevBlock := bc.Chain[len(bc.Chain)-1]
 	newBlock := &Block{
 		Index:     prevBlock.Index + 1,

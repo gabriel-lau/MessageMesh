@@ -27,11 +27,11 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 
 	switch o.Type {
 	case "ADD_MESSAGE_BLOCK":
-		newBlock := currentState.Blockchain.AddMessageBlock(o.Message)
+		newBlock := currentState.Blockchain.AddMessageBlock(*o.Message)
 		debug.Log("raft", fmt.Sprintf("New message block added: %d", newBlock.Index))
 
 	case "ADD_ACCOUNT_BLOCK":
-		newBlock := currentState.Blockchain.AddAccountBlock(o.Account)
+		newBlock := currentState.Blockchain.AddAccountBlock(*o.Account)
 		debug.Log("raft", fmt.Sprintf("New account block added: %d", newBlock.Index))
 	}
 
@@ -178,9 +178,6 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		select {
 		case <-raftconsensus.Subscribe():
 			newState, _ := raftconsensus.GetCurrentState()
-			debug.Log("raft", fmt.Sprintf("New state: %v", newState))
-			newLogHead, _ := raftconsensus.GetLogHead()
-			debug.Log("raft", fmt.Sprintf("New log head: %v", newLogHead))
 			blockchain := newState.(*raftState).Blockchain
 			debug.Log("raft", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
 			latestBlock := blockchain.GetLatestBlock()
