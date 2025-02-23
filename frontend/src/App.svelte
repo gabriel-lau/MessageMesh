@@ -39,6 +39,9 @@
         } if (!messageMap.get(key)?.some(m => m.Hash === block.Hash)) {
           messageMap.get(key)?.push(block);
         }
+        if (selectedPeer && (message.sender === selectedPeer || message.receiver === selectedPeer)) {
+          messages = getMessagesForPeer(selectedPeer);
+        }
       } else if (block.BlockType === "account") {
         const account: models.Account = block.Data;
         accountMap.set(account.publicKey, account);
@@ -70,12 +73,8 @@
   function getMessagesForPeer(peerId: string): models.Message[] {
     const messages: models.Message[] = [];
     messageMap.forEach((msgs, key) => {
-      console.log("key", key);
       if (key.includes(peerId)) {
         messages.push(...msgs.map(msg => msg.Data as models.Message));
-        console.log("message", msgs);
-        console.log("userPeerId", userPeerID);
-        console.log("selectedPeer", selectedPeer);
       }
     });
     return messages.sort((a, b) => 
