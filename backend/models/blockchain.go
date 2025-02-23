@@ -13,12 +13,12 @@ type BlockData interface {
 
 // Base Block struct
 type Block struct {
-	Index     int
-	Timestamp int64
-	PrevHash  string
-	Hash      string
-	BlockType string // "message" or "account"
-	Data      BlockData
+	Index     int       `json:"Index"`
+	Timestamp int64     `json:"Timestamp"`
+	PrevHash  string    `json:"PrevHash"`
+	Hash      string    `json:"Hash"`
+	BlockType string    `json:"BlockType"`
+	Data      BlockData `json:"Data"`
 }
 
 // MessageData implements BlockData

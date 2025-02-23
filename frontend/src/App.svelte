@@ -29,6 +29,7 @@
 
   // Load initial blockchain data
   Wails.EventsOn("getBlockchain", (blocks: models.Block[]) => {
+    console.log("getBlockchain", blocks);
     blocks.forEach(block => {
       if (block.BlockType === "message") {
         const message = block.Data.Message;
