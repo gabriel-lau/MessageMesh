@@ -52,7 +52,7 @@
     <div bind:this={messagesContainer} class="h-full overflow-y-auto">
       <!-- Check if message is from self or other -->
       {#each messages as message}
-        {#if message.sender === userPeerID }
+        {#if message.sender === userPeerID || message.receiver === selectedPeer}
         <div class="flex w-full justify-end p-3">
           <div class="flex flex-col w-full max-w-[320px] leading-1.5 p-4 text-white bg-primary-700 dark:bg-primary-800 rounded-l-xl rounded-br-xl">
             <span class="text-sm font-semibold text-white flex-initial text-ellipsis">{message.sender}</span>

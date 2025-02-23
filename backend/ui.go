@@ -39,6 +39,13 @@ func UIDataLoop(network Network, ctx context.Context) {
 					runtime.EventsEmit(ctx, "getAccount", block.Data.(*models.AccountData).Account)
 					debug.Log("ui", "Account: "+block.Data.(*models.AccountData).Account.Username)
 				}
+				if block.BlockType == "firstMessage" {
+					runtime.EventsEmit(ctx, "getFirstMessage", block.Data.(*models.FirstMessageData).FirstMessage)
+					debug.Log("ui", "First Message: "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey)
+				}
+
+				runtime.EventsEmit(ctx, "getBlock", block)
+
 				// Get the blockchain
 				runtime.EventsEmit(ctx, "getBlockchain", network.ConsensusService.Blockchain.Chain)
 
@@ -68,7 +75,7 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case block := <-network.ConsensusService.LatestBlock:
 				debug.Log("ui", "Block: "+block.BlockType)
 			case <-time.After(30 * time.Second):
-				count += 1
+				count = count + 1
 				network.SendMessage("Hello I am "+debug.Username+fmt.Sprint(count), "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
 			case <-ctx.Done():
 				return

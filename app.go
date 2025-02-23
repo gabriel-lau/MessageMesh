@@ -32,7 +32,18 @@ func (a *App) startup(ctx context.Context) {
 	go backend.UIDataLoop(a.network, a.ctx)
 }
 
-// CHATCOMPONET
+func (a *App) GetPeerList() []string {
+	peers := make([]string, 0)
+	for _, peer := range a.network.PubSubService.PeerList() {
+		peers = append(peers, peer.String())
+	}
+	return peers
+}
+
+func (a *App) GetUserPeerID() string {
+	return a.network.PubSubService.SelfID().String()
+}
+
 func (a *App) SendMessage(message string, receiver string) {
 	a.network.SendMessage(message, receiver)
 }

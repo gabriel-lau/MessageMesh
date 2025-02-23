@@ -23,7 +23,7 @@
     accounts = data;
   });
   // Store all messages in a map with composite key "sender:receiver"
-  let messageMap = $state(new Map<string, models.Message[]>());
+  let messageMap = $state(new Map<string, models.Block[]>());
   // Store all accounts in a map with peerID as key
   let accountMap = $state(new Map<string, models.Account>());
 
@@ -32,36 +32,34 @@
     console.log("getBlockchain", blocks);
     blocks.forEach(block => {
       if (block.BlockType === "message") {
-        const message = block.Data.Message;
+        const message: models.Message = block.Data;
         const key = getMessageKey(message.sender, message.receiver);
         if (!messageMap.has(key)) {
           messageMap.set(key, []);
+        } if (!messageMap.get(key)?.some(m => m.Hash === block.Hash)) {
+          messageMap.get(key)?.push(block);
         }
-        messageMap.get(key)?.push(message);
       } else if (block.BlockType === "account") {
-        const account = block.Data.Account;
+        const account: models.Account = block.Data;
         accountMap.set(account.publicKey, account);
       }
     });
   });
 
-  // Listen for new messages
-  Wails.EventsOn("getMessage", (message: models.Message) => {
-    const key = getMessageKey(message.sender, message.receiver);
-    if (!messageMap.has(key)) {
-      messageMap.set(key, []);
+  Wails.EventsOn("getBlock", (block: models.Block) => {
+    if (block.BlockType === "message") {
+      const message: models.Message = block.Data;
+      const key = getMessageKey(message.sender, message.receiver);
+      if (!messageMap.has(key)) {
+        messageMap.set(key, []);
+      } if (!messageMap.get(key)?.some(m => m.Hash === block.Hash)) {
+        messageMap.get(key)?.push(block);
+      }
     }
-    messageMap.get(key)?.push(message);
-    
-    // Update messages if this message belongs to the selected peer
-    if (selectedPeer && (message.sender === selectedPeer || message.receiver === selectedPeer)) {
-      messages = getMessagesForPeer(selectedPeer);
+    if (block.BlockType === "account") {
+      const account: models.Account = block.Data;
+      accountMap.set(account.publicKey, account);
     }
-  });
-
-  // Listen for new accounts
-  Wails.EventsOn("getAccount", (account: models.Account) => {
-    accountMap.set(account.publicKey, account);
   });
 
   function getMessageKey(sender: string, receiver: string): string {
@@ -72,8 +70,12 @@
   function getMessagesForPeer(peerId: string): models.Message[] {
     const messages: models.Message[] = [];
     messageMap.forEach((msgs, key) => {
+      console.log("key", key);
       if (key.includes(peerId)) {
-        messages.push(...msgs);
+        messages.push(...msgs.map(msg => msg.Data as models.Message));
+        console.log("message", msgs);
+        console.log("userPeerId", userPeerID);
+        console.log("selectedPeer", selectedPeer);
       }
     });
     return messages.sort((a, b) => 

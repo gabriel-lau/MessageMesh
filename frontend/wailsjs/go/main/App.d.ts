@@ -10,4 +10,8 @@ export function GetMessages():Promise<Array<models.Message>>;
 
 export function GetMessagesFromPeer(arg1:string):Promise<Array<models.Message>>;
 
+export function GetPeerList():Promise<Array<string>>;
+
+export function GetUserPeerID():Promise<string>;
+
 export function SendMessage(arg1:string,arg2:string):Promise<void>;
