@@ -16,6 +16,7 @@
   });
   let messages = $state<models.Message[]>([]);
   Wails.EventsOn("getMessages", (data: models.Message[]) => {
+    console.log("getMessages", data);
     messages = data;
   });
   let accounts = $state<models.Account[]>([]);

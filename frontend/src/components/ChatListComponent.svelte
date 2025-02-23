@@ -4,7 +4,6 @@
   let { userPeerID = $bindable(), selectedPeer = $bindable(), accounts = $bindable() } = $props();
   let peerList = $state([]);
   Wails.EventsOn('getPeerList', (data) => {
-    console.log(data);
     peerList = data;
   });
 

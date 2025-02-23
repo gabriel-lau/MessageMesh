@@ -21,6 +21,12 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case peerIDs := <-network.PubSubService.PeerIDs:
 				runtime.EventsEmit(ctx, "getPeerList", peerIDs)
 				debug.Log("ui", "Peers: "+string(len(peerIDs)))
+			// repeat this every 10 seconds
+			case <-time.After(10 * time.Second):
+				runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
+				// Leader
+				leader := network.ConsensusService.Raft.Leader()
+				runtime.EventsEmit(ctx, "getLeader", leader)
 			case block := <-network.ConsensusService.LatestBlock:
 				// Check if the block is a message block
 				if block.BlockType == "message" {
@@ -41,6 +47,7 @@ func UIDataLoop(network Network, ctx context.Context) {
 						messages = append(messages, block.Data.(*models.MessageData).Message)
 					}
 				}
+				debug.Log("ui", "Messages: "+string(len(messages)))
 				runtime.EventsEmit(ctx, "getMessages", messages)
 				// Get the accounts
 				accounts := make([]*models.Account, 0)

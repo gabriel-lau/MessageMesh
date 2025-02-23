@@ -123,11 +123,25 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 }
 
 func networkLoop(network *Network, raftInstance *raft.Raft) {
+	debug.Log("raft", "Starting network loop")
+
+	// Verify channel connection
+	debug.Log("raft", "Checking PubSubService channels...")
+	if network.PubSubService == nil {
+		debug.Log("raft", "ERROR: PubSubService is nil")
+		return
+	}
+	if network.PubSubService.PeerJoin == nil {
+		debug.Log("raft", "ERROR: PeerJoin channel is nil")
+		return
+	}
+
+	debug.Log("raft", "Channels verified, starting main loop")
+
 	for {
 		select {
 		case peer := <-network.PubSubService.PeerJoin:
-			debug.Log("raft", fmt.Sprintf("Peer joined: %s", peer))
-
+			debug.Log("raft", fmt.Sprintf("Network loop received peer join: %s", peer))
 			// Only add voter if we are the leader
 			if raftInstance.State() == raft.Leader {
 				future := raftInstance.AddVoter(

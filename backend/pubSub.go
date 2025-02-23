@@ -150,7 +150,7 @@ func (pubSubService *PubSubService) PeerJoinedLoop() {
 
 	// Initialize PeerIDs channel if not already initialized
 	if pubSubService.PeerIDs == nil {
-		pubSubService.PeerIDs = make(chan []peer.ID, 1)
+		pubSubService.PeerIDs = make(chan []peer.ID, 10)
 	}
 
 	for {

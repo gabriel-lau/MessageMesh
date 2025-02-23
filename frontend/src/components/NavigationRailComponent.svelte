@@ -27,7 +27,6 @@
   import * as Wails from '../../wailsjs/runtime/runtime.js';
   let peerList = $state([]);
   Wails.EventsOn('getPeerList', (newPeerList) => {
-    console.log(newPeerList);
     peerList = newPeerList;
   });
 

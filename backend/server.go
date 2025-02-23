@@ -8,7 +8,6 @@ import (
 )
 
 func (network *Network) ConnectToNetwork() {
-	debug.Log("server", "The PeerChat Application is starting.")
 	debug.Log("server", "This may take upto 30 seconds.")
 
 	// Create a new P2PHost
