@@ -8,7 +8,6 @@ import (
 )
 
 func (network *Network) ConnectToNetwork() {
-	debug.Log("server", "The PeerChat Application is starting.")
 	debug.Log("server", "This may take upto 30 seconds.")
 
 	// Create a new P2PHost
@@ -39,10 +38,10 @@ func (network *Network) ConnectToNetwork() {
 	debug.Log("server", "Blockchain loaded")
 }
 
-func (network *Network) SendMessage(message string) {
+func (network *Network) SendMessage(message string, receiver string) {
 	network.PubSubService.Outbound <- models.Message{
 		Sender:    network.PubSubService.SelfID().String(),
-		Receiver:  "QmYvjPHjCwsMXQThevzPyHTWwBK7VLHaAwjocEa42CK2vQ",
+		Receiver:  receiver,
 		Message:   message,
 		Timestamp: time.Now().Format(time.RFC3339),
 	}

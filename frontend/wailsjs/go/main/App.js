@@ -14,10 +14,18 @@ export function GetMessages() {
   return window['go']['main']['App']['GetMessages']();
 }
 
-export function Greet(arg1) {
-  return window['go']['main']['App']['Greet'](arg1);
+export function GetMessagesFromPeer(arg1) {
+  return window['go']['main']['App']['GetMessagesFromPeer'](arg1);
 }
 
-export function SendMessage(arg1) {
-  return window['go']['main']['App']['SendMessage'](arg1);
+export function GetPeerList() {
+  return window['go']['main']['App']['GetPeerList']();
+}
+
+export function GetUserPeerID() {
+  return window['go']['main']['App']['GetUserPeerID']();
+}
+
+export function SendMessage(arg1, arg2) {
+  return window['go']['main']['App']['SendMessage'](arg1, arg2);
 }

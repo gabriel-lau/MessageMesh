@@ -116,13 +116,13 @@ func (p2p *P2PService) AnnounceConnect() {
 	if err != nil {
 		debug.Log("err", fmt.Sprintf("Failed to Announce Service CID! %s", err.Error()))
 	} else {
-		debug.Log("p2p", "Announced the PeerChat Service.")
+		debug.Log("p2p", "Announced Service.")
 	}
 	time.Sleep(time.Second * 5)
 
 	// Find the other providers for the service CID
 	peerchan := p2p.KadDHT.FindProvidersAsync(p2p.Ctx, cidvalue, 0)
-	debug.Log("p2p", "Discovered PeerChat Service Peers.")
+	debug.Log("p2p", "Discovered Service Peers.")
 
 	// Connect to peers as they are discovered
 	go handlePeerDiscovery(p2p.Host, peerchan)

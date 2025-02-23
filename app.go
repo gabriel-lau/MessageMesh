@@ -4,7 +4,6 @@ import (
 	backend "MessageMesh/backend"
 	"MessageMesh/backend/models"
 	"context"
-	"fmt"
 )
 
 // App struct
@@ -33,14 +32,20 @@ func (a *App) startup(ctx context.Context) {
 	go backend.UIDataLoop(a.network, a.ctx)
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+func (a *App) GetPeerList() []string {
+	peers := make([]string, 0)
+	for _, peer := range a.network.PubSubService.PeerList() {
+		peers = append(peers, peer.String())
+	}
+	return peers
 }
 
-// CHATCOMPONET
-func (a *App) SendMessage(message string) {
-	a.network.SendMessage(message)
+func (a *App) GetUserPeerID() string {
+	return a.network.PubSubService.SelfID().String()
+}
+
+func (a *App) SendMessage(message string, receiver string) {
+	a.network.SendMessage(message, receiver)
 }
 
 func (a *App) GetBlockchain() []*models.Block {
@@ -51,17 +56,28 @@ func (a *App) GetMessages() []*models.Message {
 	messages := make([]*models.Message, 0)
 	for _, block := range a.network.ConsensusService.Blockchain.Chain {
 		if block.BlockType == "message" {
-			messages = append(messages, block.Data.(*models.MessageData).Message)
+			messages = append(messages, &block.Data.(*models.MessageData).Message)
 		}
 	}
 	return messages
 }
 
+func (a *App) GetMessagesFromPeer(peer string) []*models.Message {
+	messages := make([]*models.Message, 0)
+	for _, block := range a.network.ConsensusService.Blockchain.Chain {
+		if block.BlockType == "message" {
+			if block.Data.(*models.MessageData).Message.Sender == peer || block.Data.(*models.MessageData).Message.Receiver == peer {
+				messages = append(messages, &block.Data.(*models.MessageData).Message)
+			}
+		}
+	}
+	return messages
+}
 func (a *App) GetAccounts() []*models.Account {
 	accounts := make([]*models.Account, 0)
 	for _, block := range a.network.ConsensusService.Blockchain.Chain {
 		if block.BlockType == "account" {
-			accounts = append(accounts, block.Data.(*models.AccountData).Account)
+			accounts = append(accounts, &block.Data.(*models.AccountData).Account)
 		}
 	}
 	return accounts
