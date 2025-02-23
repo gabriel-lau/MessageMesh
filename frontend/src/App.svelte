@@ -5,26 +5,89 @@
   import ChatComponent from './components/ChatComponent.svelte';
   import * as Wails from '../wailsjs/runtime/runtime.js';
   import { models } from '../wailsjs/go/models.js';
+  import { GetMessagesFromPeer } from '../wailsjs/go/main/App.js';
+
+  let selectedPeer = $state('');
 
   let userPeerID = $state('');
   Wails.EventsOn("getUserPeerID", (data: string) => {
     userPeerID = data;
   });
-  let blockchain = $state<models.Block[]>([]);
-  Wails.EventsOn("getBlockchain", (data: models.Block[]) => {
-    blockchain = data;
-  });
   let messages = $state<models.Message[]>([]);
-  Wails.EventsOn("getMessages", (data: models.Message[]) => {
-    console.log("getMessages", data);
-    messages = data;
+  let ready = $state(false);
+  Wails.EventsOn("ready", () => {
+    ready = true;
   });
   let accounts = $state<models.Account[]>([]);
   Wails.EventsOn("getAccounts", (data: models.Account[]) => {
     accounts = data;
   });
+  // Store all messages in a map with composite key "sender:receiver"
+  let messageMap = $state(new Map<string, models.Message[]>());
+  // Store all accounts in a map with peerID as key
+  let accountMap = $state(new Map<string, models.Account>());
 
-  let selectedPeer = $state('');
+  // Load initial blockchain data
+  Wails.EventsOn("getBlockchain", (blocks: models.Block[]) => {
+    blocks.forEach(block => {
+      if (block.BlockType === "message") {
+        const message = block.Data.Message;
+        const key = getMessageKey(message.sender, message.receiver);
+        if (!messageMap.has(key)) {
+          messageMap.set(key, []);
+        }
+        messageMap.get(key)?.push(message);
+      } else if (block.BlockType === "account") {
+        const account = block.Data.Account;
+        accountMap.set(account.publicKey, account);
+      }
+    });
+  });
+
+  // Listen for new messages
+  Wails.EventsOn("getMessage", (message: models.Message) => {
+    const key = getMessageKey(message.sender, message.receiver);
+    if (!messageMap.has(key)) {
+      messageMap.set(key, []);
+    }
+    messageMap.get(key)?.push(message);
+    
+    // Update messages if this message belongs to the selected peer
+    if (selectedPeer && (message.sender === selectedPeer || message.receiver === selectedPeer)) {
+      messages = getMessagesForPeer(selectedPeer);
+    }
+  });
+
+  // Listen for new accounts
+  Wails.EventsOn("getAccount", (account: models.Account) => {
+    accountMap.set(account.publicKey, account);
+  });
+
+  function getMessageKey(sender: string, receiver: string): string {
+    // Create consistent key regardless of sender/receiver order
+    return [sender, receiver].sort().join(':');
+  }
+
+  function getMessagesForPeer(peerId: string): models.Message[] {
+    const messages: models.Message[] = [];
+    messageMap.forEach((msgs, key) => {
+      if (key.includes(peerId)) {
+        messages.push(...msgs);
+      }
+    });
+    return messages.sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+  }
+
+  // Bind these to child components
+  messages = getMessagesForPeer(selectedPeer);
+  $effect(() => {
+    if (selectedPeer) {
+      messages = getMessagesForPeer(selectedPeer);
+    }
+  });
+
 </script>
 
 <main>
@@ -35,12 +98,6 @@
       <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
     </div>
   </div>
-  <!-- <img alt="Wails logo" id="logo" src="{logo}"> -->
-  <!-- <div class="result" id="result">{resultText}</div>
-  <div class="input-box" id="input">
-    <input autocomplete="off" bind:value={name} class="input" id="name" type="text"/>
-    <button class="btn" on:click={greet}>Greet</button>
-  </div> -->
 </main>
 
 <style>

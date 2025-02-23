@@ -51,6 +51,17 @@ func (a *App) GetMessages() []*models.Message {
 	return messages
 }
 
+func (a *App) GetMessagesFromPeer(peer string) []*models.Message {
+	messages := make([]*models.Message, 0)
+	for _, block := range a.network.ConsensusService.Blockchain.Chain {
+		if block.BlockType == "message" {
+			if block.Data.(*models.MessageData).Message.Sender == peer || block.Data.(*models.MessageData).Message.Receiver == peer {
+				messages = append(messages, block.Data.(*models.MessageData).Message)
+			}
+		}
+	}
+	return messages
+}
 func (a *App) GetAccounts() []*models.Account {
 	accounts := make([]*models.Account, 0)
 	for _, block := range a.network.ConsensusService.Blockchain.Chain {

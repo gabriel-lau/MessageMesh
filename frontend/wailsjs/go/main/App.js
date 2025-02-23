@@ -14,6 +14,10 @@ export function GetMessages() {
   return window['go']['main']['App']['GetMessages']();
 }
 
+export function GetMessagesFromPeer(arg1) {
+  return window['go']['main']['App']['GetMessagesFromPeer'](arg1);
+}
+
 export function SendMessage(arg1, arg2) {
   return window['go']['main']['App']['SendMessage'](arg1, arg2);
 }

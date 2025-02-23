@@ -11,6 +11,8 @@ import (
 
 func UIDataLoop(network Network, ctx context.Context) {
 	debug.Log("ui", "Wails events emitter started")
+	// Emit ready event
+	runtime.EventsEmit(ctx, "ready")
 	if !debug.IsHeadless {
 
 		// Send the user's peer ID once to the frontend and then remove the event listener
