@@ -11,6 +11,7 @@ import (
 	"os"
 
 	libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -267,4 +268,62 @@ func DecryptWithSymmetricKey(ciphertext []byte, key []byte) ([]byte, error) {
 	}
 
 	return plaintext, nil
+}
+
+// GetPeerPublicKey retrieves the public key of a peer from their peer ID
+func GetPeerPublicKey(p2p *P2PService, peerIDStr string) (libp2pcrypto.PubKey, error) {
+	// Parse the peer ID string
+	peerID, err := peer.Decode(peerIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode peer ID: %s", err.Error())
+	}
+
+	// Extract public key from peer ID
+	pubKey, err := peerID.ExtractPublicKey()
+	if err != nil {
+		// If the public key isn't embedded in the peer ID, try to get it from the peer store
+		pubKey = p2p.Host.Peerstore().PubKey(peerID)
+		if pubKey == nil {
+			return nil, fmt.Errorf("couldn't find public key for peer %s", peerIDStr)
+		}
+	}
+
+	return pubKey, nil
+}
+
+// GetPeerStandardPublicKey retrieves the public key of a peer in standard crypto.PublicKey format
+func GetPeerStandardPublicKey(p2p *P2PService, peerIDStr string) (crypto.PublicKey, error) {
+	pubKey, err := GetPeerPublicKey(p2p, peerIDStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to standard crypto.PublicKey
+	stdPubKey, err := libp2pcrypto.PubKeyToStdKey(pubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to standard public key: %s", err.Error())
+	}
+
+	return stdPubKey, nil
+}
+
+// EncryptForPeer encrypts a message for a specific peer using their public key
+func EncryptForPeer(p2p *P2PService, message []byte, peerIDStr string) ([]byte, error) {
+	stdPubKey, err := GetPeerStandardPublicKey(p2p, peerIDStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to RSA public key and encrypt
+	rsaPubKey, ok := stdPubKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("peer's public key is not RSA")
+	}
+
+	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, rsaPubKey, message)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt message: %s", err.Error())
+	}
+
+	return ciphertext, nil
 }
