@@ -39,9 +39,9 @@ type P2PService struct {
 
 type PubSubService struct {
 	// Listen to new messages
-	Inbound chan models.Message
+	Inbound chan any
 	// Send messages
-	Outbound chan models.Message
+	Outbound chan any
 	// Listen to new peers
 	PeerJoin chan peer.ID
 	// Listen to peer leave

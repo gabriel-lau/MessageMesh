@@ -36,8 +36,8 @@ func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 
 	// Create a ChatRoom object
 	pubsubservice := &PubSubService{
-		Inbound:   make(chan models.Message),
-		Outbound:  make(chan models.Message),
+		Inbound:   make(chan any),
+		Outbound:  make(chan any),
 		PeerJoin:  make(chan peer.ID, 10),
 		PeerLeave: make(chan peer.ID, 10),
 		PeerIDs:   make(chan []peer.ID, 10),
