@@ -17,7 +17,7 @@ type raftState struct {
 }
 
 type raftOP struct {
-	Type         string // "ADD_MESSAGE_BLOCK" or "ADD_ACCOUNT_BLOCK"
+	Type         string // "ADD_MESSAGE_BLOCK" or "ADD_ACCOUNT_BLOCK" or "ADD_FIRST_MESSAGE_BLOCK"
 	Message      *models.Message
 	Account      *models.Account
 	FirstMessage *models.FirstMessage
@@ -222,7 +222,9 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			// If outbound is a message
 			if message, ok := outbound.(models.Message); ok {
 				debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
-				addMessageBlock(network, message, raftconsensus, actor)
+			}
+			if firstMessage, ok := outbound.(models.FirstMessage); ok {
+				debug.Log("raft", fmt.Sprintf("Outbound first message: %s and %s", firstMessage.PeerID1, firstMessage.PeerID2))
 			}
 
 		case inbound := <-network.PubSubService.Inbound:
@@ -230,6 +232,10 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			if message, ok := inbound.(models.Message); ok {
 				debug.Log("raft", fmt.Sprintf("Inbound message: %s", message.Message))
 				addMessageBlock(network, message, raftconsensus, actor)
+			}
+			if firstMessage, ok := inbound.(models.FirstMessage); ok {
+				debug.Log("raft", fmt.Sprintf("Inbound first message: %s and %s", firstMessage.PeerID1, firstMessage.PeerID2))
+				addFirstMessageBlock(network, firstMessage, raftconsensus, actor)
 			}
 		}
 	}
@@ -262,8 +268,10 @@ func addFirstMessageBlock(network *Network, firstMessage models.FirstMessage, ra
 		op := &raftOP{
 			Type: "ADD_FIRST_MESSAGE_BLOCK",
 			FirstMessage: &models.FirstMessage{
-				PeerID1: firstMessage.PeerID1,
-				PeerID2: firstMessage.PeerID2,
+				PeerID1:      firstMessage.PeerID1,
+				PeerID2:      firstMessage.PeerID2,
+				SymetricKey1: firstMessage.SymetricKey1,
+				SymetricKey2: firstMessage.SymetricKey2,
 			},
 		}
 
