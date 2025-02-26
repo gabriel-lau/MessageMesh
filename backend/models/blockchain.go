@@ -35,7 +35,7 @@ type FirstMessageData struct {
 }
 
 func (md *FirstMessageData) CalculateDataHash() string {
-	return md.SymetricKey
+	return md.PeerID1 + md.PeerID2 + md.SymetricKey1 + md.SymetricKey2
 }
 
 // AccountData implements BlockData
@@ -131,6 +131,14 @@ func (bc *Blockchain) AddFirstMessageBlock(firstMessage FirstMessage) *Block {
 	newBlock.Hash = newBlock.CalculateHash()
 	bc.Chain = append(bc.Chain, newBlock)
 	return newBlock
+}
+
+func (bc *Blockchain) GetFirstMessageBlock(index int) *Block {
+	block := bc.Chain[index]
+	if block.BlockType != "firstMessage" {
+		return nil
+	}
+	return block
 }
 
 func (bc *Blockchain) GetLatestBlock() *Block {
