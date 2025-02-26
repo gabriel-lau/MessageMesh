@@ -2,9 +2,12 @@ package backend
 
 import (
 	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"io"
 	"os"
 
 	libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
@@ -200,5 +203,68 @@ func (keypair *KeyPair) DecryptWithPrivateKey(ciphertext []byte) ([]byte, error)
 		fmt.Println("Error decrypting message:", err)
 		return nil, err
 	}
+	return plaintext, nil
+}
+
+// GenerateSymmetricKey creates a random symmetric key of specified length
+func GenerateSymmetricKey(length int) ([]byte, error) {
+	key := make([]byte, length)
+	_, err := rand.Read(key)
+	if err != nil {
+		fmt.Println("Error generating symmetric key:", err)
+		return nil, err
+	}
+	return key, nil
+}
+
+// EncryptWithSymmetricKey encrypts a message using AES-GCM with the symmetric key
+func EncryptWithSymmetricKey(plaintext []byte, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println("Error creating cipher:", err)
+		return nil, err
+	}
+
+	nonce := make([]byte, 12)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		fmt.Println("Error generating nonce:", err)
+		return nil, err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		fmt.Println("Error creating GCM:", err)
+		return nil, err
+	}
+
+	ciphertext := aesgcm.Seal(nonce, nonce, plaintext, nil)
+	return ciphertext, nil
+}
+
+// DecryptWithSymmetricKey decrypts a message using AES-GCM with the symmetric key
+func DecryptWithSymmetricKey(ciphertext []byte, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println("Error creating cipher:", err)
+		return nil, err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		fmt.Println("Error creating GCM:", err)
+		return nil, err
+	}
+
+	if len(ciphertext) < 12 {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+
+	nonce, ciphertext := ciphertext[:12], ciphertext[12:]
+	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		fmt.Println("Error decrypting message:", err)
+		return nil, err
+	}
+
 	return plaintext, nil
 }

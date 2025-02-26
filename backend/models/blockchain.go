@@ -119,6 +119,20 @@ func (bc *Blockchain) AddAccountBlock(account Account) *Block {
 	return newBlock
 }
 
+func (bc *Blockchain) AddFirstMessageBlock(firstMessage FirstMessage) *Block {
+	prevBlock := bc.Chain[len(bc.Chain)-1]
+	newBlock := &Block{
+		Index:     prevBlock.Index + 1,
+		Timestamp: time.Now().Unix(),
+		PrevHash:  prevBlock.Hash,
+		BlockType: "firstMessage",
+		Data:      &FirstMessageData{FirstMessage: firstMessage},
+	}
+	newBlock.Hash = newBlock.CalculateHash()
+	bc.Chain = append(bc.Chain, newBlock)
+	return newBlock
+}
+
 func (bc *Blockchain) GetLatestBlock() *Block {
 	return bc.Chain[len(bc.Chain)-1]
 }
