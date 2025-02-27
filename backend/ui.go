@@ -41,7 +41,7 @@ func UIDataLoop(network Network, ctx context.Context) {
 				}
 				if block.BlockType == "firstMessage" {
 					runtime.EventsEmit(ctx, "getFirstMessage", block.Data.(*models.FirstMessageData).FirstMessage)
-					debug.Log("ui", "First Message: "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey1+" and "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey2)
+					debug.Log("ui", "First Message: "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey0+" and "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey1)
 				}
 
 				runtime.EventsEmit(ctx, "getBlock", block)

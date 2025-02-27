@@ -3,6 +3,7 @@ package models
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"sort"
 	"time"
 )
 
@@ -35,7 +36,7 @@ type FirstMessageData struct {
 }
 
 func (md *FirstMessageData) CalculateDataHash() string {
-	return md.PeerID1 + md.PeerID2 + md.SymetricKey1 + md.SymetricKey2
+	return md.PeerIDs[0] + md.PeerIDs[1] + md.SymetricKey0 + md.SymetricKey1
 }
 
 // AccountData implements BlockData
@@ -159,4 +160,18 @@ func (bc *Blockchain) IsValid() bool {
 		}
 	}
 	return true
+}
+
+// Check if the blockchain has a first message block with a specific peer
+func (bc *Blockchain) CheckPeerFirstMessage(peerIDs []string) *FirstMessage {
+	// Loop through the blockchain
+	for _, block := range bc.Chain {
+		if block.BlockType == "firstMessage" {
+			sort.Strings(peerIDs)
+			if block.Data.(*FirstMessageData).PeerIDs[0] == peerIDs[0] && block.Data.(*FirstMessageData).PeerIDs[1] == peerIDs[1] {
+				return &block.Data.(*FirstMessageData).FirstMessage
+			}
+		}
+	}
+	return nil
 }

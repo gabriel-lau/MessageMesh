@@ -200,7 +200,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				}
 			case "firstMessage":
 				if firstMessageData, ok := latestBlock.Data.(*models.FirstMessageData); ok {
-					debug.Log("raft", fmt.Sprintf("Latest first message: %s and %s", firstMessageData.FirstMessage.PeerID1, firstMessageData.FirstMessage.PeerID2))
+					debug.Log("raft", fmt.Sprintf("Latest first message: %s and %s", firstMessageData.FirstMessage.GetPeerIDs()[0], firstMessageData.FirstMessage.GetPeerIDs()[1]))
 				}
 			default:
 				debug.Log("raft", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
@@ -224,7 +224,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
 			}
 			if firstMessage, ok := outbound.(models.FirstMessage); ok {
-				debug.Log("raft", fmt.Sprintf("Outbound first message: %s and %s", firstMessage.PeerID1, firstMessage.PeerID2))
+				debug.Log("raft", fmt.Sprintf("Outbound first message: %s and %s", firstMessage.GetPeerIDs()[0], firstMessage.GetPeerIDs()[1]))
 			}
 
 		case inbound := <-network.PubSubService.Inbound:
@@ -234,7 +234,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				addMessageBlock(network, message, raftconsensus, actor)
 			}
 			if firstMessage, ok := inbound.(models.FirstMessage); ok {
-				debug.Log("raft", fmt.Sprintf("Inbound first message: %s and %s", firstMessage.PeerID1, firstMessage.PeerID2))
+				debug.Log("raft", fmt.Sprintf("Inbound first message: %s and %s", firstMessage.GetPeerIDs()[0], firstMessage.GetPeerIDs()[1]))
 				addFirstMessageBlock(network, firstMessage, raftconsensus, actor)
 			}
 		}
@@ -264,14 +264,13 @@ func addMessageBlock(network *Network, message models.Message, raftconsensus *li
 
 func addFirstMessageBlock(network *Network, firstMessage models.FirstMessage, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
 	if actor.IsLeader() {
-		debug.Log("raft", fmt.Sprintf("Adding first message block: %s and %s", firstMessage.PeerID1, firstMessage.PeerID2))
+		debug.Log("raft", fmt.Sprintf("Adding first message block: %s and %s", firstMessage.GetPeerIDs()[0], firstMessage.GetPeerIDs()[1]))
 		op := &raftOP{
 			Type: "ADD_FIRST_MESSAGE_BLOCK",
 			FirstMessage: &models.FirstMessage{
-				PeerID1:      firstMessage.PeerID1,
-				PeerID2:      firstMessage.PeerID2,
+				PeerIDs:      firstMessage.PeerIDs,
+				SymetricKey0: firstMessage.SymetricKey0,
 				SymetricKey1: firstMessage.SymetricKey1,
-				SymetricKey2: firstMessage.SymetricKey2,
 			},
 		}
 
