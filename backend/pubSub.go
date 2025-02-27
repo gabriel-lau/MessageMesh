@@ -64,36 +64,50 @@ func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 	return pubsubservice, nil
 }
 
+// A method of ChatRoom that publishes a chatmessage
+// to the PubSub topic until the pubsub context closes
 func (pubSubService *PubSubService) PubLoop() {
 	for {
 		select {
 		case <-pubSubService.psctx.Done():
 			return
 
-		case packet := <-pubSubService.Outbound:
-			packetbytes, err := json.Marshal(packet)
+		case message := <-pubSubService.Outbound:
+			// Create a ChatMessage
+
+			// Marshal the ChatMessage into a JSON
+			messagebytes, err := json.Marshal(message)
 			if err != nil {
 				debug.Log("err", "Could not marshal JSON")
 				continue
 			}
+			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
 
-			err = pubSubService.pstopic.Publish(pubSubService.psctx, packetbytes)
+			// Publish the message to the topic
+			err = pubSubService.pstopic.Publish(pubSubService.psctx, messagebytes)
 			if err != nil {
 				debug.Log("err", "Could not publish to topic")
 				continue
 			}
+			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message published")
 		}
 	}
 }
 
+// A method of ChatRoom that continously reads from the subscription
+// until either the subscription or pubsub context closes.
+// The recieved message is parsed sent into the inbound channel
 func (pubSubService *PubSubService) SubLoop() {
+	// Start loop
 	for {
 		select {
 		case <-pubSubService.psctx.Done():
 			return
 
 		default:
+			// Read a message from the subscription
 			packet, err := pubSubService.psub.Next(pubSubService.psctx)
+			// Check error
 			if err != nil {
 				// Close the messages queue (subscription has closed)
 				close(pubSubService.Inbound)
@@ -118,7 +132,7 @@ func (pubSubService *PubSubService) SubLoop() {
 				debug.Log("err", "Could not unmarshal Message JSON")
 				continue
 			} else {
-				pubSubService.Inbound <- unmarshalMessage
+				pubSubService.Inbound <- *unmarshalMessage
 			}
 
 			// Unmarshal the first message
@@ -127,7 +141,7 @@ func (pubSubService *PubSubService) SubLoop() {
 				debug.Log("err", "Could not unmarshal FirstMessage JSON")
 				continue
 			} else {
-				pubSubService.Inbound <- unmarshalFirstMessage
+				pubSubService.Inbound <- *unmarshalFirstMessage
 			}
 
 			// Unmarshal the account
@@ -136,7 +150,7 @@ func (pubSubService *PubSubService) SubLoop() {
 				debug.Log("err", "Could not unmarshal Account JSON")
 				continue
 			} else {
-				pubSubService.Inbound <- unmarshalAccount
+				pubSubService.Inbound <- *unmarshalAccount
 			}
 		}
 	}
