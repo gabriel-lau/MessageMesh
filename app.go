@@ -48,6 +48,10 @@ func (a *App) SendMessage(message string, receiver string) {
 	a.network.SendMessage(message, receiver)
 }
 
+func (a *App) SendEncryptedMessage(message string, receiver string) {
+	a.network.SendEncryptedMessage(message, receiver)
+}
+
 func (a *App) GetBlockchain() []*models.Block {
 	return a.network.ConsensusService.Blockchain.Chain
 }
