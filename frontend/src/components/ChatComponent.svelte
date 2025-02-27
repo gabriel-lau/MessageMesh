@@ -3,7 +3,7 @@
   import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
   import { PaperPlaneOutline } from 'flowbite-svelte-icons';
   import * as Wails from '../../wailsjs/runtime/runtime.js';
-  import { SendMessage, GetMessagesFromPeer } from '../../wailsjs/go/main/App.js';
+  import { SendMessage, SendEncryptedMessage, GetMessagesFromPeer } from '../../wailsjs/go/main/App.js';
   import { models } from '../../wailsjs/go/models.js';
   let { userPeerID = $bindable(), selectedPeer = $bindable(), messages = $bindable() } = $props();
   
@@ -24,7 +24,8 @@
 
   function sendMessage(): void {
     if (!selectedPeer) return; // Don't send if no peer is selected
-    SendMessage(message, selectedPeer);
+    // SendMessage(message, selectedPeer);
+    SendEncryptedMessage(message, selectedPeer);
     message = '';
   }
 </script>

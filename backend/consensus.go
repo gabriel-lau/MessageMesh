@@ -218,14 +218,14 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			debug.Log("raft", "Leader changed")
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
 
-		case outbound := <-network.PubSubService.Outbound:
-			// If outbound is a message
-			if message, ok := outbound.(models.Message); ok {
-				debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
-			}
-			if firstMessage, ok := outbound.(models.FirstMessage); ok {
-				debug.Log("raft", fmt.Sprintf("Outbound first message: %s and %s", firstMessage.GetPeerIDs()[0], firstMessage.GetPeerIDs()[1]))
-			}
+		// case outbound := <-network.PubSubService.Outbound:
+		// 	// If outbound is a message
+		// 	if message, ok := outbound.(models.Message); ok {
+		// 		debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
+		// 	}
+		// 	if firstMessage, ok := outbound.(models.FirstMessage); ok {
+		// 		debug.Log("raft", fmt.Sprintf("Outbound first message: %s and %s", firstMessage.GetPeerIDs()[0], firstMessage.GetPeerIDs()[1]))
+		// 	}
 
 		case inbound := <-network.PubSubService.Inbound:
 			// If inbound is a message

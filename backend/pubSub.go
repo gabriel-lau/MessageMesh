@@ -64,50 +64,36 @@ func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 	return pubsubservice, nil
 }
 
-// A method of ChatRoom that publishes a chatmessage
-// to the PubSub topic until the pubsub context closes
 func (pubSubService *PubSubService) PubLoop() {
 	for {
 		select {
 		case <-pubSubService.psctx.Done():
 			return
 
-		case message := <-pubSubService.Outbound:
-			// Create a ChatMessage
-
-			// Marshal the ChatMessage into a JSON
-			messagebytes, err := json.Marshal(message)
+		case packet := <-pubSubService.Outbound:
+			packetbytes, err := json.Marshal(packet)
 			if err != nil {
 				debug.Log("err", "Could not marshal JSON")
 				continue
 			}
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message marshalled")
 
-			// Publish the message to the topic
-			err = pubSubService.pstopic.Publish(pubSubService.psctx, messagebytes)
+			err = pubSubService.pstopic.Publish(pubSubService.psctx, packetbytes)
 			if err != nil {
 				debug.Log("err", "Could not publish to topic")
 				continue
 			}
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Pub Message published")
 		}
 	}
 }
 
-// A method of ChatRoom that continously reads from the subscription
-// until either the subscription or pubsub context closes.
-// The recieved message is parsed sent into the inbound channel
 func (pubSubService *PubSubService) SubLoop() {
-	// Start loop
 	for {
 		select {
 		case <-pubSubService.psctx.Done():
 			return
 
 		default:
-			// Read a message from the subscription
-			message, err := pubSubService.psub.Next(pubSubService.psctx)
-			// Check error
+			packet, err := pubSubService.psub.Next(pubSubService.psctx)
 			if err != nil {
 				// Close the messages queue (subscription has closed)
 				close(pubSubService.Inbound)
@@ -116,26 +102,42 @@ func (pubSubService *PubSubService) SubLoop() {
 			}
 
 			// Check if message is from self
-			if message.ReceivedFrom == pubSubService.selfid {
+			if packet.ReceivedFrom == pubSubService.selfid {
 				debug.Log("pubsub", "Sub Message from self")
 			} else {
 				debug.Log("pubsub", "Sub Message from other peer")
 			}
 
-			// Declare a ChatMessage
-			cm := &models.Message{}
-			// Unmarshal the message data into a ChatMessage
-			err = json.Unmarshal(message.Data, cm)
-			if err != nil {
-				debug.Log("err", "Could not unmarshal JSON")
-				continue
-			}
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sender: " + cm.Sender)
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Receiver: " + cm.Receiver)
+			unmarshalMessage := &models.Message{}
+			unmarshalFirstMessage := &models.FirstMessage{}
+			unmarshalAccount := &models.Account{}
 
-			// Send the ChatMessage into the message queue
-			pubSubService.Inbound <- *cm
+			// Unmarshal the message
+			err = json.Unmarshal(packet.Data, unmarshalMessage)
+			if err != nil {
+				debug.Log("err", "Could not unmarshal Message JSON")
+				continue
+			} else {
+				pubSubService.Inbound <- unmarshalMessage
+			}
+
+			// Unmarshal the first message
+			err = json.Unmarshal(packet.Data, unmarshalFirstMessage)
+			if err != nil {
+				debug.Log("err", "Could not unmarshal FirstMessage JSON")
+				continue
+			} else {
+				pubSubService.Inbound <- unmarshalFirstMessage
+			}
+
+			// Unmarshal the account
+			err = json.Unmarshal(packet.Data, unmarshalAccount)
+			if err != nil {
+				debug.Log("err", "Could not unmarshal Account JSON")
+				continue
+			} else {
+				pubSubService.Inbound <- unmarshalAccount
+			}
 		}
 	}
 }

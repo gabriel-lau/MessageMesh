@@ -72,7 +72,6 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 	symmetricKey, err := GetSymmetricKey(peerIDs)
 	if err != nil {
 		debug.Log("server", fmt.Sprintf("Error getting symmetric key for %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
-		return "", err
 	}
 	// If the symmetric key is not found check the blockchain for a first message
 	if symmetricKey == nil {
@@ -81,6 +80,14 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 		firstMessage := network.ConsensusService.Blockchain.CheckPeerFirstMessage(peerIDs)
 		if firstMessage != nil {
 			debug.Log("server", fmt.Sprintf("First message found for %s and %s", peerIDs[0], peerIDs[1]))
+			symmetricKey = []byte(firstMessage.GetSymetricKey(sender))
+		} else {
+			debug.Log("server", fmt.Sprintf("First message not found for %s and %s", peerIDs[0], peerIDs[1]))
+			firstMessage, err := network.SendFirstMessage(peerIDs)
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error sending first message to %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
+				return "", err
+			}
 			symmetricKey = []byte(firstMessage.GetSymetricKey(sender))
 		}
 	}
@@ -102,6 +109,7 @@ func (network *Network) SendFirstMessage(peerIDs []string) (models.FirstMessage,
 		debug.Log("server", fmt.Sprintf("Error generating symmetric key: %s", err.Error()))
 		return models.FirstMessage{}, err
 	}
+	debug.Log("server", fmt.Sprintf("Symmetric key generated for %s and %s", peerIDs[0], peerIDs[1]))
 
 	// Save the symmetric key to the database
 	err = SaveSymmetricKey(symmetricKey, peerIDs)
@@ -109,6 +117,7 @@ func (network *Network) SendFirstMessage(peerIDs []string) (models.FirstMessage,
 		debug.Log("server", fmt.Sprintf("Error saving symmetric key: %s", err.Error()))
 		return models.FirstMessage{}, err
 	}
+	debug.Log("server", fmt.Sprintf("Symmetric key saved for %s and %s", peerIDs[0], peerIDs[1]))
 
 	peerID0 := peerIDs[0]
 	peerID1 := peerIDs[1]

@@ -14,4 +14,6 @@ export function GetPeerList():Promise<Array<string>>;
 
 export function GetUserPeerID():Promise<string>;
 
+export function SendEncryptedMessage(arg1:string,arg2:string):Promise<void>;
+
 export function SendMessage(arg1:string,arg2:string):Promise<void>;
