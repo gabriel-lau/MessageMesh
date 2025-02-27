@@ -29,6 +29,8 @@ const (
 	dbpath    = directory + "/" + file
 )
 
+var keyMap = map[string]string{}
+
 // Generate a new key pair
 func NewKeyPair() (KeyPair, error) {
 	keypair := KeyPair{}
@@ -272,42 +274,52 @@ func DecryptWithSymmetricKey(ciphertext []byte, key []byte) ([]byte, error) {
 }
 
 func SaveSymmetricKey(key []byte, peerIDs []string) error {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		return err
-	}
-	return db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists([]byte("symmetric"))
-		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		sort.Strings(peerIDs)
-		return bucket.Put([]byte(peerIDs[0]+peerIDs[1]), key)
-	})
+	sort.Strings(peerIDs)
+	keyMap[peerIDs[0]+peerIDs[1]] = string(key)
+	return nil
+	// db, err := bolt.Open(dbpath, 0600, nil)
+	// if err != nil {
+	// 	return err
+	// }
+	// return db.Update(func(tx *bolt.Tx) error {
+	// 	bucket, err := tx.CreateBucketIfNotExists([]byte("symmetric"))
+	// 	if err != nil {
+	// 		return fmt.Errorf("create bucket: %s", err)
+	// 	}
+	// 	sort.Strings(peerIDs)
+	// 	return bucket.Put([]byte(peerIDs[0]+peerIDs[1]), key)
+	// })
 }
 
 func GetSymmetricKey(peerIDs []string) ([]byte, error) {
-	db, err := bolt.Open(dbpath, 0600, nil)
-	if err != nil {
-		return nil, err
-	}
-	var key []byte
-	err = db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("symmetric"))
-		if bucket == nil {
-			return fmt.Errorf("bucket not found")
-		}
-		sort.Strings(peerIDs)
-		key = bucket.Get([]byte(peerIDs[0] + peerIDs[1]))
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	if key == nil {
+	sort.Strings(peerIDs)
+	key := keyMap[peerIDs[0]+peerIDs[1]]
+	if key == "" {
 		return nil, fmt.Errorf("symmetric key not found")
 	}
-	return key, nil
+	return []byte(key), nil
+
+	// db, err := bolt.Open(dbpath, 0600, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// var key []byte
+	// err = db.View(func(tx *bolt.Tx) error {
+	// 	bucket := tx.Bucket([]byte("symmetric"))
+	// 	if bucket == nil {
+	// 		return fmt.Errorf("bucket not found")
+	// 	}
+	// 	sort.Strings(peerIDs)
+	// 	key = bucket.Get([]byte(peerIDs[0] + peerIDs[1]))
+	// 	return nil
+	// })
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if key == nil {
+	// 	return nil, fmt.Errorf("symmetric key not found")
+	// }
+	// return key, nil
 }
 
 // GetPeerPublicKey retrieves the public key of a peer from their peer ID

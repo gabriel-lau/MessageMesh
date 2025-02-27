@@ -6,13 +6,8 @@ type FirstMessage struct {
 	SymetricKey1 string   `json:"symetricKey2"` // Symmetric key for peer[1] (Encrypted with peer[0]'s public key)
 }
 
-func (fm *FirstMessage) GetPeerIDs() []string {
-	return fm.PeerIDs
-}
-
 func (fm *FirstMessage) GetSymetricKey(peerID string) string {
-	peerIDs := fm.GetPeerIDs()
-	if peerID == peerIDs[0] {
+	if peerID == fm.PeerIDs[0] {
 		return fm.SymetricKey0
 	}
 	return fm.SymetricKey1
