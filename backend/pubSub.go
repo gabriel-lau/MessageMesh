@@ -129,8 +129,8 @@ func (pubSubService *PubSubService) SubLoop() {
 			}
 
 			// First unmarshal just the envelope to determine the message type
-			var envelope MessageEnvelope
-			err = json.Unmarshal(packet.Data, &envelope)
+			envelope := &MessageEnvelope{}
+			err = json.Unmarshal(packet.Data, envelope)
 			if err != nil {
 				debug.Log("err", "Could not unmarshal message envelope: "+err.Error())
 				continue
@@ -139,28 +139,28 @@ func (pubSubService *PubSubService) SubLoop() {
 			// Based on the type, unmarshal into the appropriate struct
 			switch envelope.Type {
 			case "Message":
-				var message models.Message
-				if err := json.Unmarshal(envelope.Data, &message); err != nil {
+				message := &models.Message{}
+				if err := json.Unmarshal(envelope.Data, message); err != nil {
 					debug.Log("err", "Could not unmarshal Message: "+err.Error())
 					continue
 				}
-				pubSubService.Inbound <- &message
+				pubSubService.Inbound <- *message
 
 			case "FirstMessage":
-				var firstMessage models.FirstMessage
-				if err := json.Unmarshal(envelope.Data, &firstMessage); err != nil {
+				firstMessage := &models.FirstMessage{}
+				if err := json.Unmarshal(envelope.Data, firstMessage); err != nil {
 					debug.Log("err", "Could not unmarshal FirstMessage: "+err.Error())
 					continue
 				}
-				pubSubService.Inbound <- &firstMessage
+				pubSubService.Inbound <- *firstMessage
 
 			case "Account":
-				var account models.Account
-				if err := json.Unmarshal(envelope.Data, &account); err != nil {
+				account := &models.Account{}
+				if err := json.Unmarshal(envelope.Data, account); err != nil {
 					debug.Log("err", "Could not unmarshal Account: "+err.Error())
 					continue
 				}
-				pubSubService.Inbound <- &account
+				pubSubService.Inbound <- *account
 
 			default:
 				debug.Log("warn", "Unknown message type: "+envelope.Type)
