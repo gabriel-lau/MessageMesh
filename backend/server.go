@@ -3,6 +3,7 @@ package backend
 import (
 	"MessageMesh/backend/models"
 	"MessageMesh/debug"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
@@ -41,11 +42,23 @@ func (network *Network) ConnectToNetwork() {
 
 func (network *Network) SendMessage(message string, receiver string) {
 	sender := network.PubSubService.SelfID().String() // Self ID
-	network.PubSubService.Outbound <- models.Message{
+	msg := models.Message{
 		Sender:    sender,
 		Receiver:  receiver,
 		Message:   message,
 		Timestamp: time.Now().Format(time.RFC3339),
+	}
+
+	// Marshal message to JSON
+	messageJSON, err := json.Marshal(msg)
+	if err != nil {
+		debug.Log("server", fmt.Sprintf("Error marshaling message: %s", err.Error()))
+		return
+	}
+
+	network.PubSubService.Outbound <- MessageEnvelope{
+		Type: "Message",
+		Data: messageJSON,
 	}
 }
 
@@ -144,7 +157,18 @@ func (network *Network) SendFirstMessage(peerIDs []string) (models.FirstMessage,
 		SymetricKey0: string(encryptedSymmetricKey0),
 		SymetricKey1: string(encryptedSymmetricKey1),
 	}
-	network.PubSubService.Outbound <- firstMessage
+
+	// Marshal firstMessage to JSON first
+	firstMessageJSON, err := json.Marshal(firstMessage)
+	if err != nil {
+		debug.Log("server", fmt.Sprintf("Error marshaling first message: %s", err.Error()))
+		return models.FirstMessage{}, err
+	}
+
+	network.PubSubService.Outbound <- MessageEnvelope{
+		Type: "FirstMessage",
+		Data: firstMessageJSON,
+	}
 	debug.Log("server", fmt.Sprintf("First message sent to %s and %s", peerID0, peerID1))
 	return firstMessage, nil
 }

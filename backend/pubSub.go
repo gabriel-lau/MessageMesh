@@ -11,6 +11,12 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
+// Define a message envelope structure
+type MessageEnvelope struct {
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
+}
+
 func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 
 	// Create a PubSub topic with the room name
@@ -72,11 +78,11 @@ func (pubSubService *PubSubService) PubLoop() {
 		case <-pubSubService.psctx.Done():
 			return
 
-		case message := <-pubSubService.Outbound:
+		case packet := <-pubSubService.Outbound:
 			// Create a ChatMessage
 
 			// Marshal the ChatMessage into a JSON
-			messagebytes, err := json.Marshal(message)
+			messagebytes, err := json.Marshal(packet)
 			if err != nil {
 				debug.Log("err", "Could not marshal JSON")
 				continue
@@ -122,35 +128,42 @@ func (pubSubService *PubSubService) SubLoop() {
 				debug.Log("pubsub", "Sub Message from other peer")
 			}
 
-			unmarshalMessage := &models.Message{}
-			unmarshalFirstMessage := &models.FirstMessage{}
-			unmarshalAccount := &models.Account{}
-
-			// Unmarshal the message
-			err = json.Unmarshal(packet.Data, unmarshalMessage)
+			// First unmarshal just the envelope to determine the message type
+			var envelope MessageEnvelope
+			err = json.Unmarshal(packet.Data, &envelope)
 			if err != nil {
-				debug.Log("err", "Could not unmarshal Message JSON")
+				debug.Log("err", "Could not unmarshal message envelope: "+err.Error())
 				continue
-			} else {
-				pubSubService.Inbound <- *unmarshalMessage
 			}
 
-			// Unmarshal the first message
-			err = json.Unmarshal(packet.Data, unmarshalFirstMessage)
-			if err != nil {
-				debug.Log("err", "Could not unmarshal FirstMessage JSON")
-				continue
-			} else {
-				pubSubService.Inbound <- *unmarshalFirstMessage
-			}
+			// Based on the type, unmarshal into the appropriate struct
+			switch envelope.Type {
+			case "Message":
+				var message models.Message
+				if err := json.Unmarshal(envelope.Data, &message); err != nil {
+					debug.Log("err", "Could not unmarshal Message: "+err.Error())
+					continue
+				}
+				pubSubService.Inbound <- &message
 
-			// Unmarshal the account
-			err = json.Unmarshal(packet.Data, unmarshalAccount)
-			if err != nil {
-				debug.Log("err", "Could not unmarshal Account JSON")
-				continue
-			} else {
-				pubSubService.Inbound <- *unmarshalAccount
+			case "FirstMessage":
+				var firstMessage models.FirstMessage
+				if err := json.Unmarshal(envelope.Data, &firstMessage); err != nil {
+					debug.Log("err", "Could not unmarshal FirstMessage: "+err.Error())
+					continue
+				}
+				pubSubService.Inbound <- &firstMessage
+
+			case "Account":
+				var account models.Account
+				if err := json.Unmarshal(envelope.Data, &account); err != nil {
+					debug.Log("err", "Could not unmarshal Account: "+err.Error())
+					continue
+				}
+				pubSubService.Inbound <- &account
+
+			default:
+				debug.Log("warn", "Unknown message type: "+envelope.Type)
 			}
 		}
 	}
