@@ -65,6 +65,8 @@ type ConsensusService struct {
 	LatestBlock chan models.Block
 	// Blockchain
 	Blockchain *models.Blockchain
+	// Consensus connected
+	Connected chan bool
 	// Raft instance
 	Raft *raft.Raft
 	// Libp2p Raft actor

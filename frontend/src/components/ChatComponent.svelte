@@ -2,10 +2,9 @@
   import { Badge, Indicator, Textarea, ToolbarButton } from 'flowbite-svelte';
   import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
   import { PaperPlaneOutline } from 'flowbite-svelte-icons';
-  import * as Wails from '../../wailsjs/runtime/runtime.js';
-  import { SendMessage, SendEncryptedMessage, GetMessagesFromPeer } from '../../wailsjs/go/main/App.js';
+  import { SendMessage, SendEncryptedMessage } from '../../wailsjs/go/main/App.js';
   import { models } from '../../wailsjs/go/models.js';
-  let { userPeerID = $bindable(), selectedPeer = $bindable(), messages = $bindable() } = $props();
+  let { userPeerID = $bindable<string>(), selectedPeer = $bindable<string>(), messages = $bindable<models.Message[]>([]) } = $props();
   
   let message = $state('');
   let messagesContainer: HTMLDivElement;

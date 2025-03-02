@@ -1,12 +1,6 @@
 <script lang="ts">
   import { Listgroup, ListgroupItem, Badge, Indicator } from 'flowbite-svelte';
-  import * as Wails from '../../wailsjs/runtime/runtime.js';
-  let { userPeerID = $bindable(), selectedPeer = $bindable(), accounts = $bindable() } = $props();
-  let peerList = $state([]);
-  Wails.EventsOn('getPeerList', (data) => {
-    peerList = data;
-  });
-
+  let { selectedPeer = $bindable<string>(), peerList = $bindable<string[]>([]) } = $props();
   function selectPeer(peer: string) {
     selectedPeer = peer;
   }
@@ -26,7 +20,7 @@
         <div class="flex items-center place-content-between w-full">
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-gray-900 truncate dark:text-white">{peer}</p>
-            <p class="text-sm text-gray-500 truncate dark:text-gray-400">email@flowbite.com</p>
+            <!-- <p class="text-sm text-gray-500 truncate dark:text-gray-400">email@flowbite.com</p> -->
           </div>
           <Badge color="green" rounded class="px-2.5 py-0.5">
             <Indicator color="green" size="xs" class="me-1" />Available

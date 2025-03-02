@@ -8,8 +8,11 @@
   import { GetMessagesFromPeer } from '../wailsjs/go/main/App.js';
 
   let selectedPeer = $state('');
-
   let userPeerID = $state('');
+  let peerList = $state<string[]>([]);
+  Wails.EventsOn("getPeerList", (data: string[]) => {
+    peerList = data;
+  });
   Wails.EventsOn("getUserPeerID", (data: string) => {
     userPeerID = data;
   });
@@ -94,9 +97,9 @@
 
 <main>
   <div class="flex w-screen h-screen bg-primary-50 dark:bg-gray-900">
-    <NavigationRailComponent></NavigationRailComponent>
+    <NavigationRailComponent bind:peerList></NavigationRailComponent>
     <div class="flex flex-row w-full">
-      <ChatListComponent bind:userPeerID bind:selectedPeer bind:accounts></ChatListComponent>
+      <ChatListComponent bind:selectedPeer bind:peerList></ChatListComponent>
       <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
     </div>
   </div>

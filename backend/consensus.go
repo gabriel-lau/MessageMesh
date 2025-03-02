@@ -156,6 +156,7 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	consensusService := &ConsensusService{
 		LatestBlock: make(chan models.Block),
 		Blockchain:  &initialState.Blockchain,
+		Connected:   make(chan bool),
 		Raft:        raftInstance,
 		Actor:       actor,
 		Consensus:   raftconsensus,
@@ -219,8 +220,24 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 }
 
 func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
+	var leaderTimeoutTimer *time.Timer
+	var leaderTimeoutDuration = 5 * time.Minute
+
+	// Function to handle leader timeout
+	handleLeaderTimeout := func() {
+		if actor.IsLeader() {
+			debug.Log("raft", "Leader timeout reached after 5 minutes, stepping down")
+			// Use leadership transfer to gracefully step down
+			err := raftInstance.LeadershipTransfer().Error()
+			if err != nil {
+				debug.Log("err", fmt.Sprintf("Failed to transfer leadership: %v", err))
+			}
+		}
+	}
+
 	for {
 		select {
+		// New block added to the blockchain
 		case <-raftconsensus.Subscribe():
 			newState, _ := raftconsensus.GetCurrentState()
 			blockchain := newState.(*raftState).Blockchain
@@ -254,9 +271,30 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				Data:      latestBlock.Data,
 			}
 
-		case <-raftInstance.LeaderCh():
+		// Leader changed
+		case isLeader := <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
+
+			// If there's an existing timer, stop it
+			if leaderTimeoutTimer != nil {
+				leaderTimeoutTimer.Stop()
+				leaderTimeoutTimer = nil
+			}
+
+			// If we became the leader, start a new timeout timer
+			if isLeader {
+				debug.Log("raft", fmt.Sprintf("We are now the leader, will step down after %v", leaderTimeoutDuration))
+				leaderTimeoutTimer = time.AfterFunc(leaderTimeoutDuration, handleLeaderTimeout)
+			}
+
+		// Check if we are connected to the consensus
+		case <-time.After(5 * time.Second):
+			if raftInstance.Leader() != "" {
+				network.ConsensusService.Connected <- true
+			} else {
+				network.ConsensusService.Connected <- false
+			}
 
 		case inbound := <-network.PubSubService.Inbound:
 			// If inbound is a message

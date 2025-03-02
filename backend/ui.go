@@ -23,12 +23,16 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case peerIDs := <-network.PubSubService.PeerIDs:
 				runtime.EventsEmit(ctx, "getPeerList", peerIDs)
 				debug.Log("ui", "Peers: "+string(len(peerIDs)))
+
+			case connected := <-network.ConsensusService.Connected:
+				runtime.EventsEmit(ctx, "getConnected", connected)
+				debug.Log("ui", "Consensus connected: "+fmt.Sprint(connected))
+
 			// repeat this every 10 seconds
 			case <-time.After(10 * time.Second):
 				runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
-				// Leader
-				leader := network.ConsensusService.Raft.Leader()
-				runtime.EventsEmit(ctx, "getLeader", leader)
+				runtime.EventsEmit(ctx, "getConnected", network.ConsensusService.Connected)
+
 			case block := <-network.ConsensusService.LatestBlock:
 				// Check if the block is a message block
 				if block.BlockType == "message" {
