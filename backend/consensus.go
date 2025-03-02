@@ -26,6 +26,15 @@ type raftOP struct {
 func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	currentState := state.(*raftState)
 
+	// Validate operation before applying
+	if err := validateOperation(o, currentState); err != nil {
+		// Log the invalid operation
+		debug.Log("raft_error", fmt.Sprintf("Invalid operation rejected: %v", err))
+		// Return error indicating validation failure
+		return currentState, err
+	}
+
+	// Apply the operation if validation passed
 	switch o.Type {
 	case "ADD_MESSAGE_BLOCK":
 		newBlock := currentState.Blockchain.AddMessageBlock(*o.Message)
@@ -41,6 +50,37 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	}
 
 	return currentState, nil
+}
+
+func validateOperation(op *raftOP, state *raftState) error {
+	// Implement validation logic based on operation type
+	switch op.Type {
+	case "ADD_MESSAGE_BLOCK":
+		if op.Message.Sender == "" || op.Message.Receiver == "" || op.Message.Message == "" {
+			return fmt.Errorf("message is missing required fields")
+		}
+		if op.Message.Sender == op.Message.Receiver {
+			return fmt.Errorf("message sender and receiver cannot be the same")
+		}
+	case "ADD_ACCOUNT_BLOCK":
+		if op.Account.Username == "" {
+			return fmt.Errorf("account is missing required fields")
+		}
+	case "ADD_FIRST_MESSAGE_BLOCK":
+		if len(op.FirstMessage.PeerIDs) != 2 {
+			return fmt.Errorf("first message must have exactly 2 peer IDs")
+		}
+		if op.FirstMessage.PeerIDs[0] == op.FirstMessage.PeerIDs[1] {
+			return fmt.Errorf("first message peer IDs cannot be the same")
+		}
+		if op.FirstMessage.PeerIDs[0] == "" || op.FirstMessage.PeerIDs[1] == "" {
+			return fmt.Errorf("first message peer IDs cannot be empty")
+		}
+		if op.FirstMessage.SymetricKey0 == "" || op.FirstMessage.SymetricKey1 == "" {
+			return fmt.Errorf("first message symetric keys cannot be empty")
+		}
+	}
+	return nil
 }
 
 func StartConsensus(network *Network) (*ConsensusService, error) {
