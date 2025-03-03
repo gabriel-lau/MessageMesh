@@ -10,6 +10,10 @@ export function GetBlockchain() {
   return window['go']['main']['App']['GetBlockchain']();
 }
 
+export function GetDecryptedMessage(arg1, arg2) {
+  return window['go']['main']['App']['GetDecryptedMessage'](arg1, arg2);
+}
+
 export function GetMessages() {
   return window['go']['main']['App']['GetMessages']();
 }

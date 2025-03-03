@@ -66,6 +66,10 @@ func (a *App) GetMessages() []*models.Message {
 	return messages
 }
 
+func (a *App) GetDecryptedMessage(message string, sender string) (string, error) {
+	return a.network.DecryptMessage(message, sender)
+}
+
 func (a *App) GetMessagesFromPeer(peer string) []*models.Message {
 	messages := make([]*models.Message, 0)
 	for _, block := range a.network.ConsensusService.Blockchain.Chain {

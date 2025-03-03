@@ -6,6 +6,8 @@ export function GetAccounts():Promise<Array<models.Account>>;
 
 export function GetBlockchain():Promise<Array<models.Block>>;
 
+export function GetDecryptedMessage(arg1:string,arg2:string):Promise<string>;
+
 export function GetMessages():Promise<Array<models.Message>>;
 
 export function GetMessagesFromPeer(arg1:string):Promise<Array<models.Message>>;

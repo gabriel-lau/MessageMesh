@@ -5,30 +5,30 @@
   import ChatComponent from './components/ChatComponent.svelte';
   import * as Wails from '../wailsjs/runtime/runtime.js';
   import { models } from '../wailsjs/go/models.js';
-  import { GetMessagesFromPeer } from '../wailsjs/go/main/App.js';
+  import { GetMessagesFromPeer, GetDecryptedMessage } from '../wailsjs/go/main/App.js';
 
   let selectedPeer = $state('');
   let userPeerID = $state('');
+  let ready = $state(false);
   let peerList = $state<string[]>([]);
+  let messages = $state<models.Message[]>([]);
+  let accounts = $state<models.Account[]>([]);
+  let messageMap = $state(new Map<string, models.Block[]>());
+  let accountMap = $state(new Map<string, models.Account>());
+
   Wails.EventsOn("getPeerList", (data: string[]) => {
     peerList = data;
   });
   Wails.EventsOn("getUserPeerID", (data: string) => {
     userPeerID = data;
   });
-  let messages = $state<models.Message[]>([]);
-  let ready = $state(false);
+
   Wails.EventsOn("ready", () => {
     ready = true;
   });
-  let accounts = $state<models.Account[]>([]);
   Wails.EventsOn("getAccounts", (data: models.Account[]) => {
     accounts = data;
   });
-  // Store all messages in a map with composite key "sender:receiver"
-  let messageMap = $state(new Map<string, models.Block[]>());
-  // Store all accounts in a map with peerID as key
-  let accountMap = $state(new Map<string, models.Account>());
 
   // Load initial blockchain data
   Wails.EventsOn("getBlockchain", (blocks: models.Block[]) => {
@@ -76,7 +76,13 @@
   function getMessagesForPeer(peerId: string): models.Message[] {
     const messages: models.Message[] = [];
     messageMap.forEach((msgs, key) => {
-      if (key.includes(peerId)) {
+      if (key.includes(peerId) && key.includes(userPeerID)) {
+        const message = msgs.map(msg => {
+          return {
+            ...(msg.Data as models.Message),
+            message: GetDecryptedMessage(msg.Data.message, msg.Data.sender)
+          }
+        });
         messages.push(...msgs.map(msg => msg.Data as models.Message));
       }
     });
