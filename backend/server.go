@@ -112,7 +112,7 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 		} else {
 			// If the first message is not found, send a first message and decrypt the symmetric key with the private key
 			debug.Log("server", fmt.Sprintf("First message not found for %s and %s", peerIDs[0], peerIDs[1]))
-			firstMessage, err := network.SendFirstMessage(peerIDs)
+			firstMessage, err := network.SendFirstMessage(peerIDs, receiver)
 			if err != nil {
 				debug.Log("server", fmt.Sprintf("Error sending first message to %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
 				return "", err
@@ -181,13 +181,13 @@ func (network *Network) DecryptMessage(message string, sender string) (string, e
 	return string(decryptedMessage), nil
 }
 
-func (network *Network) SendFirstMessage(peerIDs []string) (models.FirstMessage, error) {
+func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (models.FirstMessage, error) {
 
 	// Check if the user is online
 	peers := network.PubSubService.PeerList()
-	if !slices.Contains(peers, (peer.ID)(peerIDs[1])) && !slices.Contains(peers, (peer.ID)(peerIDs[0])) {
-		debug.Log("server", fmt.Sprintf("User %s is not online", peerIDs[1]))
-		return models.FirstMessage{}, fmt.Errorf("user %s is not online", peerIDs[1])
+	if !slices.Contains(peers, (peer.ID)(receiver)) {
+		debug.Log("server", fmt.Sprintf("User %s is not online", receiver))
+		return models.FirstMessage{}, fmt.Errorf("user %s is not online", receiver)
 	}
 	// Generate a symmetric key
 	symmetricKey, err := GenerateSymmetricKey(32)
