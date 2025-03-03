@@ -5,8 +5,11 @@ import (
 	"MessageMesh/debug"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"time"
+
+	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 func (network *Network) ConnectToNetwork() {
@@ -55,6 +58,7 @@ func (network *Network) SendMessage(message string, receiver string) {
 		debug.Log("server", fmt.Sprintf("Error marshaling message: %s", err.Error()))
 		return
 	}
+	debug.Log("server", fmt.Sprintf("Message marshaled: %s", string(messageJSON)))
 
 	network.PubSubService.Outbound <- MessageEnvelope{
 		Type: "Message",
@@ -73,6 +77,7 @@ func (network *Network) SendEncryptedMessage(message string, receiver string) {
 		debug.Log("server", fmt.Sprintf("Error encrypting message for %s: %s", receiver, err.Error()))
 		return
 	}
+	debug.Log("server", fmt.Sprintf("Sending encrypted message: %s", encryptedMessage))
 	network.SendMessage(encryptedMessage, receiver)
 }
 
@@ -177,6 +182,13 @@ func (network *Network) DecryptMessage(message string, sender string) (string, e
 }
 
 func (network *Network) SendFirstMessage(peerIDs []string) (models.FirstMessage, error) {
+
+	// Check if the user is online
+	peers := network.PubSubService.PeerList()
+	if !slices.Contains(peers, (peer.ID)(peerIDs[1])) && !slices.Contains(peers, (peer.ID)(peerIDs[0])) {
+		debug.Log("server", fmt.Sprintf("User %s is not online", peerIDs[1]))
+		return models.FirstMessage{}, fmt.Errorf("user %s is not online", peerIDs[1])
+	}
 	// Generate a symmetric key
 	symmetricKey, err := GenerateSymmetricKey(32)
 	if err != nil {
