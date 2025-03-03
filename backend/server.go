@@ -5,7 +5,6 @@ import (
 	"MessageMesh/debug"
 	"encoding/json"
 	"fmt"
-	"slices"
 	"sort"
 	"time"
 
@@ -182,10 +181,9 @@ func (network *Network) DecryptMessage(message string, sender string) (string, e
 }
 
 func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (models.FirstMessage, error) {
-
+	receiverPeerID := peer.ID(receiver)
 	// Check if the user is online
-	peers := network.PubSubService.PeerList()
-	if !slices.Contains(peers, (peer.ID)(receiver)) {
+	if receiverPeerID == "" {
 		debug.Log("server", fmt.Sprintf("User %s is not online", receiver))
 		return models.FirstMessage{}, fmt.Errorf("user %s is not online", receiver)
 	}
