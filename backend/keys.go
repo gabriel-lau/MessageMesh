@@ -218,6 +218,7 @@ func GenerateSymmetricKey(length int) ([]byte, error) {
 		fmt.Println("Error generating symmetric key:", err)
 		return nil, err
 	}
+	fmt.Println("Symmetric key generated:", key)
 	return key, nil
 }
 
@@ -378,4 +379,19 @@ func EncryptForPeer(p2p *P2PService, message []byte, peerIDStr string) ([]byte, 
 	}
 
 	return ciphertext, nil
+}
+
+func DecryptWithPrivateKey(ciphertext []byte, privKey crypto.PrivateKey) ([]byte, error) {
+	// Convert to RSA private key and decrypt
+	rsaPrivKey, ok := privKey.(*rsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("peer's private key is not RSA")
+	}
+
+	plaintext, err := rsa.DecryptPKCS1v15(rand.Reader, rsaPrivKey, ciphertext)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt message: %s", err.Error())
+	}
+
+	return plaintext, nil
 }

@@ -36,7 +36,7 @@ type FirstMessageData struct {
 }
 
 func (md *FirstMessageData) CalculateDataHash() string {
-	return md.PeerIDs[0] + md.PeerIDs[1] + md.SymetricKey0 + md.SymetricKey1
+	return md.PeerIDs[0] + md.PeerIDs[1] + hex.EncodeToString(md.SymetricKey0) + hex.EncodeToString(md.SymetricKey1)
 }
 
 // AccountData implements BlockData

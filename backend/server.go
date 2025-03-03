@@ -91,9 +91,18 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 		debug.Log("server", fmt.Sprintf("Symmetric key not found for %s and %s", peerIDs[0], peerIDs[1]))
 		// Check if the firstMessage is shared between the two peers in the blockchain
 		firstMessage := network.ConsensusService.Blockchain.CheckPeerFirstMessage(peerIDs)
+		keyPair, err := ReadKeyPair()
+		if err != nil {
+			debug.Log("server", fmt.Sprintf("Error reading key pair: %s", err.Error()))
+			return "", err
+		}
 		if firstMessage != nil {
 			debug.Log("server", fmt.Sprintf("First message found for %s and %s", peerIDs[0], peerIDs[1]))
-			symmetricKey = []byte(firstMessage.GetSymetricKey(sender))
+			symmetricKey, err = keyPair.DecryptWithPrivateKey(firstMessage.GetSymetricKey(sender))
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error decrypting symmetric key for %s: %s", sender, err.Error()))
+				return "", err
+			}
 		} else {
 			debug.Log("server", fmt.Sprintf("First message not found for %s and %s", peerIDs[0], peerIDs[1]))
 			firstMessage, err := network.SendFirstMessage(peerIDs)
@@ -101,7 +110,11 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 				debug.Log("server", fmt.Sprintf("Error sending first message to %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
 				return "", err
 			}
-			symmetricKey = []byte(firstMessage.GetSymetricKey(sender))
+			symmetricKey, err = keyPair.DecryptWithPrivateKey(firstMessage.GetSymetricKey(sender))
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error decrypting symmetric key for %s: %s", sender, err.Error()))
+				return "", err
+			}
 		}
 	}
 
@@ -154,8 +167,8 @@ func (network *Network) SendFirstMessage(peerIDs []string) (models.FirstMessage,
 	// Create the first message
 	firstMessage := models.FirstMessage{
 		PeerIDs:      peerIDs,
-		SymetricKey0: string(encryptedSymmetricKey0),
-		SymetricKey1: string(encryptedSymmetricKey1),
+		SymetricKey0: encryptedSymmetricKey0,
+		SymetricKey1: encryptedSymmetricKey1,
 	}
 
 	// Marshal firstMessage to JSON first

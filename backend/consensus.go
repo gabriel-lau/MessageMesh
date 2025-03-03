@@ -76,7 +76,7 @@ func validateOperation(op *raftOP, state *raftState) error {
 		if op.FirstMessage.PeerIDs[0] == "" || op.FirstMessage.PeerIDs[1] == "" {
 			return fmt.Errorf("first message peer IDs cannot be empty")
 		}
-		if op.FirstMessage.SymetricKey0 == "" || op.FirstMessage.SymetricKey1 == "" {
+		if op.FirstMessage.SymetricKey0 == nil || op.FirstMessage.SymetricKey1 == nil {
 			return fmt.Errorf("first message symetric keys cannot be empty")
 		}
 	}

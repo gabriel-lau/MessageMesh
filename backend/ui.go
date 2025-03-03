@@ -4,6 +4,7 @@ import (
 	"MessageMesh/backend/models"
 	"MessageMesh/debug"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -45,7 +46,7 @@ func UIDataLoop(network Network, ctx context.Context) {
 				}
 				if block.BlockType == "firstMessage" {
 					runtime.EventsEmit(ctx, "getFirstMessage", block.Data.(*models.FirstMessageData).FirstMessage)
-					debug.Log("ui", "First Message: "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey0+" and "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey1)
+					debug.Log("ui", "First Message: "+hex.EncodeToString(block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey0)+" and "+hex.EncodeToString(block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey1))
 				}
 
 				runtime.EventsEmit(ctx, "getBlock", block)
