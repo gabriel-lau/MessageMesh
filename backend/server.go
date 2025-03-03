@@ -57,7 +57,6 @@ func (network *Network) SendMessage(message string, receiver string) {
 		debug.Log("server", fmt.Sprintf("Error marshaling message: %s", err.Error()))
 		return
 	}
-	debug.Log("server", fmt.Sprintf("Message marshaled: %s", string(messageJSON)))
 
 	network.PubSubService.Outbound <- MessageEnvelope{
 		Type: "Message",
