@@ -23,33 +23,35 @@
     DownloadOutline,
     UserCircleSolid
   } from 'flowbite-svelte-icons';
-  import { EventsOn } from '../../wailsjs/runtime/runtime';
   import * as Wails from '../../wailsjs/runtime/runtime.js';
-  let peerList = $state([]);
-  Wails.EventsOn('getPeerList', (newPeerList) => {
-    peerList = newPeerList;
+  let { peerList = $bindable<string[]>([]) } = $props();
+
+  let connected: 'Connected' | 'Disconnected' = $state('Disconnected');
+  let status: 'green' | 'red' = $state('red');
+  Wails.EventsOn('getConnected', (isConnected) => {
+    if (isConnected) {
+      status = 'green';
+      connected = 'Connected';
+    } else {
+      status = 'red';
+      connected = 'Disconnected';
+    }
   });
 
   let spanClass = 'text-xs text-center';
   let newChatModal = false;
-  let status: 'green' | 'red' | 'disabled' | 'gray' = 'green';
   let settingsModal = false;
-  let settingsToast = false;
-  function getOnlinePeers() {
-    const eventRemover = EventsOn('myEvent', () => console.log('Event fired.'));
-    return () => eventRemover();
-  }
 </script>
 
 <div class="h-screen">
   <Sidebar class="w-auto h-full">
     <SidebarWrapper class="h-full rounded-none">
       <SidebarGroup>
-        <SidebarItem class="flex flex-col" {spanClass} on:click={() => (newChatModal = true)} href="#">
+        <!-- <SidebarItem class="flex flex-col" {spanClass} on:click={() => (newChatModal = true)} href="#">
           <svelte:fragment slot="icon">
             <Button class="!p-2"><PlusOutline class="w-6 h-6" /></Button>
           </svelte:fragment>
-        </SidebarItem>
+        </SidebarItem> -->
 
         <SidebarItem label="Connected to {peerList.length} peers" class="flex flex-col" {spanClass} href="#">
           <svelte:fragment slot="icon">
@@ -57,23 +59,23 @@
           </svelte:fragment>
         </SidebarItem>
 
-        <SidebarItem label="Online" class="flex flex-col" {spanClass} href="#">
+        <SidebarItem label={connected} class="flex flex-col" {spanClass} href="#">
           <svelte:fragment slot="icon">
-            <Indicator class="m-2" color="green" />
+            <Indicator class="m-2" color={status} />
           </svelte:fragment>
         </SidebarItem>
 
-        <SidebarItem label="Settings" class="flex flex-col" {spanClass} on:click={() => (settingsModal = true)} href="#">
+        <!-- <SidebarItem label="Settings" class="flex flex-col" {spanClass} on:click={() => (settingsModal = true)} href="#">
           <svelte:fragment slot="icon">
             <AdjustmentsVerticalOutline
               class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
             />
           </svelte:fragment>
-        </SidebarItem>
+        </SidebarItem> -->
       </SidebarGroup>
     </SidebarWrapper>
   </Sidebar>
-  <Modal title="Settings" size="xs" bind:open={settingsModal} autoclose>
+  <!-- <Modal title="Settings" size="xs" bind:open={settingsModal} autoclose>
     <Listgroup active class="w-full" on:click={console.log}>
       <ListgroupItem>
         <a href="#" class="flex items-center gap-2">
@@ -95,8 +97,8 @@
         <DarkMode />
       </div>
     </svelte:fragment>
-  </Modal>
-  <Modal title="New Chat" size="sm" bind:open={newChatModal} autoclose>
+  </Modal> -->
+  <!-- <Modal title="New Chat" size="sm" bind:open={newChatModal} autoclose>
     <div class="mb-6">
       <ButtonGroup class="w-full">
         <InputAddon>
@@ -113,7 +115,7 @@
       <Button on:click={() => alert('Handle "success"')}>Save</Button>
       <Button color="alternative">Cancel</Button>
     </svelte:fragment>
-  </Modal>
+  </Modal> -->
   <!-- <Toast dismissable={settingsToast} color="green">
     <svelte:fragment slot="icon">
       <CheckCircleSolid class="w-5 h-5" />

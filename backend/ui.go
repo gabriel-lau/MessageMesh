@@ -4,6 +4,7 @@ import (
 	"MessageMesh/backend/models"
 	"MessageMesh/debug"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -23,15 +24,33 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case peerIDs := <-network.PubSubService.PeerIDs:
 				runtime.EventsEmit(ctx, "getPeerList", peerIDs)
 				debug.Log("ui", "Peers: "+string(len(peerIDs)))
+
+			case connected := <-network.ConsensusService.Connected:
+				runtime.EventsEmit(ctx, "getConnected", connected)
+				debug.Log("ui", "Consensus connected: "+fmt.Sprint(connected))
+
 			// repeat this every 10 seconds
 			case <-time.After(10 * time.Second):
 				runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
-				// Leader
-				leader := network.ConsensusService.Raft.Leader()
-				runtime.EventsEmit(ctx, "getLeader", leader)
+				runtime.EventsEmit(ctx, "getConnected", network.ConsensusService.Connected)
+
 			case block := <-network.ConsensusService.LatestBlock:
 				// Check if the block is a message block
 				if block.BlockType == "message" {
+					// peerID := network.PubSubService.selfid.String()
+					// If the message is encrypted, decrypt it
+					// if block.Data.(*models.MessageData).Sender == peerID || block.Data.(*models.MessageData).Receiver == peerID {
+					// 	// Add debug logging
+					// 	debug.Log("ui", fmt.Sprintf("Attempting to decrypt message: %s", block.Data.(*models.MessageData).Message.Message))
+
+					// 	decryptedMessage, err := network.DecryptMessage(block.Data.(*models.MessageData).Message.Message, block.Data.(*models.MessageData).Message.Sender)
+					// 	if err != nil {
+					// 		debug.Log("ui", "Error decrypting message: "+err.Error())
+					// 	} else {
+					// 		debug.Log("ui", fmt.Sprintf("Successfully decrypted message: %s", decryptedMessage))
+					// 	}
+					// 	block.Data.(*models.MessageData).Message.Message = decryptedMessage
+					// }
 					runtime.EventsEmit(ctx, "getMessage", block.Data.(*models.MessageData).Message)
 					debug.Log("ui", "Message: "+block.Data.(*models.MessageData).Message.Message)
 				}
@@ -41,42 +60,20 @@ func UIDataLoop(network Network, ctx context.Context) {
 				}
 				if block.BlockType == "firstMessage" {
 					runtime.EventsEmit(ctx, "getFirstMessage", block.Data.(*models.FirstMessageData).FirstMessage)
-					debug.Log("ui", "First Message: "+block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey)
+					debug.Log("ui", "First Message: "+hex.EncodeToString(block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey0)+" and "+hex.EncodeToString(block.Data.(*models.FirstMessageData).FirstMessage.SymetricKey1))
 				}
 
 				runtime.EventsEmit(ctx, "getBlock", block)
-
-				// Get the blockchain
 				runtime.EventsEmit(ctx, "getBlockchain", network.ConsensusService.Blockchain.Chain)
-
-				// Get the messages
-				messages := make([]*models.Message, 0)
-				for _, block := range network.ConsensusService.Blockchain.Chain {
-					if block.BlockType == "message" {
-						messages = append(messages, &block.Data.(*models.MessageData).Message)
-					}
-				}
-				debug.Log("ui", "Messages: "+string(len(messages)))
-				runtime.EventsEmit(ctx, "getMessages", messages)
-				// Get the accounts
-				accounts := make([]*models.Account, 0)
-				for _, block := range network.ConsensusService.Blockchain.Chain {
-					if block.BlockType == "account" {
-						accounts = append(accounts, &block.Data.(*models.AccountData).Account)
-					}
-				}
-				runtime.EventsEmit(ctx, "getAccounts", accounts)
 			}
 		}
 	} else {
 		for {
-			count := 0
 			select {
 			case block := <-network.ConsensusService.LatestBlock:
 				debug.Log("ui", "Block: "+block.BlockType)
 			case <-time.After(30 * time.Second):
-				count = count + 1
-				network.SendMessage("Hello I am "+debug.Username+fmt.Sprint(count), "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
+				network.SendEncryptedMessage("Hello I am "+debug.Username, "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
 			case <-ctx.Done():
 				return
 			}

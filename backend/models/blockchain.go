@@ -1,8 +1,11 @@
 package models
 
 import (
+	"MessageMesh/debug"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
+	"sort"
 	"time"
 )
 
@@ -35,7 +38,7 @@ type FirstMessageData struct {
 }
 
 func (md *FirstMessageData) CalculateDataHash() string {
-	return md.SymetricKey
+	return md.PeerIDs[0] + md.PeerIDs[1] + hex.EncodeToString(md.SymetricKey0) + hex.EncodeToString(md.SymetricKey1)
 }
 
 // AccountData implements BlockData
@@ -119,6 +122,28 @@ func (bc *Blockchain) AddAccountBlock(account Account) *Block {
 	return newBlock
 }
 
+func (bc *Blockchain) AddFirstMessageBlock(firstMessage FirstMessage) *Block {
+	prevBlock := bc.Chain[len(bc.Chain)-1]
+	newBlock := &Block{
+		Index:     prevBlock.Index + 1,
+		Timestamp: time.Now().Unix(),
+		PrevHash:  prevBlock.Hash,
+		BlockType: "firstMessage",
+		Data:      &FirstMessageData{FirstMessage: firstMessage},
+	}
+	newBlock.Hash = newBlock.CalculateHash()
+	bc.Chain = append(bc.Chain, newBlock)
+	return newBlock
+}
+
+func (bc *Blockchain) GetFirstMessageBlock(index int) *Block {
+	block := bc.Chain[index]
+	if block.BlockType != "firstMessage" {
+		return nil
+	}
+	return block
+}
+
 func (bc *Blockchain) GetLatestBlock() *Block {
 	return bc.Chain[len(bc.Chain)-1]
 }
@@ -137,4 +162,19 @@ func (bc *Blockchain) IsValid() bool {
 		}
 	}
 	return true
+}
+
+// Check if the blockchain has a first message block with a specific peer
+func (bc *Blockchain) CheckPeerFirstMessage(peerIDs []string) *FirstMessage {
+	// Loop through the blockchain
+	for _, block := range bc.Chain {
+		if block.BlockType == "firstMessage" {
+			sort.Strings(peerIDs)
+			if block.Data.(*FirstMessageData).PeerIDs[0] == peerIDs[0] && block.Data.(*FirstMessageData).PeerIDs[1] == peerIDs[1] {
+				debug.Log("blockchain", fmt.Sprintf("First message found for %s and %s", peerIDs[0], peerIDs[1]))
+				return &block.Data.(*FirstMessageData).FirstMessage
+			}
+		}
+	}
+	return nil
 }

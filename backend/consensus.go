@@ -17,14 +17,44 @@ type raftState struct {
 }
 
 type raftOP struct {
-	Type    string // "ADD_MESSAGE_BLOCK" or "ADD_ACCOUNT_BLOCK"
-	Message *models.Message
-	Account *models.Account
+	Type         string // "ADD_MESSAGE_BLOCK" or "ADD_ACCOUNT_BLOCK" or "ADD_FIRST_MESSAGE_BLOCK"
+	Message      *models.Message
+	Account      *models.Account
+	FirstMessage *models.FirstMessage
 }
 
 func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	currentState := state.(*raftState)
 
+	// Validate operation before applying
+	switch o.Type {
+	case "ADD_MESSAGE_BLOCK":
+		if o.Message.Sender == "" || o.Message.Receiver == "" || o.Message.Message == "" {
+			return currentState, fmt.Errorf("message is missing required fields")
+		}
+		if o.Message.Sender == o.Message.Receiver {
+			return currentState, fmt.Errorf("message sender and receiver cannot be the same")
+		}
+	case "ADD_ACCOUNT_BLOCK":
+		if o.Account.Username == "" {
+			return currentState, fmt.Errorf("account is missing required fields")
+		}
+	case "ADD_FIRST_MESSAGE_BLOCK":
+		if len(o.FirstMessage.PeerIDs) != 2 {
+			return currentState, fmt.Errorf("first message must have exactly 2 peer IDs")
+		}
+		if o.FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[1] {
+			return currentState, fmt.Errorf("first message peer IDs cannot be the same")
+		}
+		if o.FirstMessage.PeerIDs[0] == "" || o.FirstMessage.PeerIDs[1] == "" {
+			return currentState, fmt.Errorf("first message peer IDs cannot be empty")
+		}
+		if o.FirstMessage.SymetricKey0 == nil || o.FirstMessage.SymetricKey1 == nil {
+			return currentState, fmt.Errorf("first message symetric keys cannot be empty")
+		}
+	}
+
+	// Apply the operation if validation passed
 	switch o.Type {
 	case "ADD_MESSAGE_BLOCK":
 		newBlock := currentState.Blockchain.AddMessageBlock(*o.Message)
@@ -33,6 +63,10 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	case "ADD_ACCOUNT_BLOCK":
 		newBlock := currentState.Blockchain.AddAccountBlock(*o.Account)
 		debug.Log("raft", fmt.Sprintf("New account block added: %d", newBlock.Index))
+
+	case "ADD_FIRST_MESSAGE_BLOCK":
+		newBlock := currentState.Blockchain.AddFirstMessageBlock(*o.FirstMessage)
+		debug.Log("raft", fmt.Sprintf("New first message block added: %d", newBlock.Index))
 	}
 
 	return currentState, nil
@@ -111,6 +145,7 @@ func StartConsensus(network *Network) (*ConsensusService, error) {
 	consensusService := &ConsensusService{
 		LatestBlock: make(chan models.Block),
 		Blockchain:  &initialState.Blockchain,
+		Connected:   make(chan bool),
 		Raft:        raftInstance,
 		Actor:       actor,
 		Consensus:   raftconsensus,
@@ -174,8 +209,24 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 }
 
 func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
+	// var leaderTimeoutTimer *time.Timer
+	// var leaderTimeoutDuration = 5 * time.Minute
+
+	// // Function to handle leader timeout
+	// handleLeaderTimeout := func() {
+	// 	if actor.IsLeader() {
+	// 		debug.Log("raft", "Leader timeout reached after 5 minutes, stepping down")
+	// 		// Use leadership transfer to gracefully step down
+	// 		err := raftInstance.LeadershipTransfer().Error()
+	// 		if err != nil {
+	// 			debug.Log("err", fmt.Sprintf("Failed to transfer leadership: %v", err))
+	// 		}
+	// 	}
+	// }
+
 	for {
 		select {
+		// New block added to the blockchain
 		case <-raftconsensus.Subscribe():
 			newState, _ := raftconsensus.GetCurrentState()
 			blockchain := newState.(*raftState).Blockchain
@@ -195,7 +246,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				}
 			case "firstMessage":
 				if firstMessageData, ok := latestBlock.Data.(*models.FirstMessageData); ok {
-					debug.Log("raft", fmt.Sprintf("Latest first message: %s", firstMessageData.FirstMessage.SymetricKey))
+					debug.Log("raft", fmt.Sprintf("Latest first message: %s and %s", firstMessageData.FirstMessage.PeerIDs[0], firstMessageData.FirstMessage.PeerIDs[1]))
 				}
 			default:
 				debug.Log("raft", fmt.Sprintf("Latest block type: %s", latestBlock.BlockType))
@@ -209,17 +260,41 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				Data:      latestBlock.Data,
 			}
 
+		// Leader changed
 		case <-raftInstance.LeaderCh():
 			debug.Log("raft", "Leader changed")
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
 
-		case message := <-network.PubSubService.Outbound:
-			debug.Log("raft", fmt.Sprintf("Outbound message: %s", message.Message))
-			// addMessageBlock(network, message, raftconsensus, actor)
+			// // If there's an existing timer, stop it
+			// if leaderTimeoutTimer != nil {
+			// 	leaderTimeoutTimer.Stop()
+			// 	leaderTimeoutTimer = nil
+			// }
 
-		case message := <-network.PubSubService.Inbound:
-			debug.Log("raft", fmt.Sprintf("Inbound message: %s", message.Message))
-			addMessageBlock(network, message, raftconsensus, actor)
+			// // If we became the leader, start a new timeout timer
+			// if isLeader {
+			// 	debug.Log("raft", fmt.Sprintf("We are now the leader, will step down after %v", leaderTimeoutDuration))
+			// 	leaderTimeoutTimer = time.AfterFunc(leaderTimeoutDuration, handleLeaderTimeout)
+			// }
+
+		// Check if we are connected to the consensus
+		// case <-time.After(5 * time.Second):
+		// 	if raftInstance.Leader() != "" {
+		// 		network.ConsensusService.Connected <- true
+		// 	} else {
+		// 		network.ConsensusService.Connected <- false
+		// 	}
+
+		case inbound := <-network.PubSubService.Inbound:
+			// If inbound is a message
+			if message, ok := inbound.(models.Message); ok {
+				debug.Log("raft", fmt.Sprintf("Inbound message: %s", message.Message))
+				addMessageBlock(network, message, raftconsensus, actor)
+			}
+			if firstMessage, ok := inbound.(models.FirstMessage); ok {
+				debug.Log("raft", fmt.Sprintf("Inbound first message: %s and %s", firstMessage.PeerIDs[0], firstMessage.PeerIDs[1]))
+				addFirstMessageBlock(network, firstMessage, raftconsensus, actor)
+			}
 		}
 	}
 }
@@ -245,39 +320,21 @@ func addMessageBlock(network *Network, message models.Message, raftconsensus *li
 	}
 }
 
-// func waitForLeader(r *raft.Raft) {
-// 	obsCh := make(chan raft.Observation, 1)
-// 	observer := raft.NewObserver(obsCh, false, nil)
-// 	r.RegisterObserver(observer)
-// 	defer r.DeregisterObserver(observer)
+func addFirstMessageBlock(network *Network, firstMessage models.FirstMessage, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
+	if actor.IsLeader() {
+		debug.Log("raft", fmt.Sprintf("Adding first message block: %s and %s", firstMessage.PeerIDs[0], firstMessage.PeerIDs[1]))
+		op := &raftOP{
+			Type: "ADD_FIRST_MESSAGE_BLOCK",
+			FirstMessage: &models.FirstMessage{
+				PeerIDs:      firstMessage.PeerIDs,
+				SymetricKey0: firstMessage.SymetricKey0,
+				SymetricKey1: firstMessage.SymetricKey1,
+			},
+		}
 
-// 	// New Raft does not allow leader observation directy
-// 	// What's worse, there will be no notification that a new
-// 	// leader was elected because observations are set before
-// 	// setting the Leader and only when the RaftState has changed.
-// 	// Therefore, we need a ticker.
-
-// 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-// 	ticker := time.NewTicker(time.Second / 2)
-// 	defer ticker.Stop()
-// 	for {
-// 		select {
-// 		case obs := <-obsCh:
-// 			switch obs.Data.(type) {
-// 			case raft.RaftState:
-// 				if r.Leader() != "" {
-// 					return
-// 				}
-// 			}
-// 		case <-ticker.C:
-// 			if r.Leader() != "" {
-// 				return
-// 			}
-// 		case <-ctx.Done():
-// 			debug.Log("raft", "timed out waiting for Leader")
-// 			debug.Log("raft", fmt.Sprintf("Current Raft State: %s", r.State()))
-// 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", r.Leader()))
-// 			return
-// 		}
-// 	}
-// }
+		_, err := raftconsensus.CommitOp(op)
+		if err != nil {
+			debug.Log("err", fmt.Sprintf("Failed to commit block: %s", err))
+		}
+	}
+}

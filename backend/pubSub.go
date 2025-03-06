@@ -11,6 +11,12 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
+// Define a message envelope structure
+type MessageEnvelope struct {
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
+}
+
 func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 
 	// Create a PubSub topic with the room name
@@ -36,8 +42,8 @@ func JoinPubSub(p2phost *P2PService) (*PubSubService, error) {
 
 	// Create a ChatRoom object
 	pubsubservice := &PubSubService{
-		Inbound:   make(chan models.Message),
-		Outbound:  make(chan models.Message),
+		Inbound:   make(chan any),
+		Outbound:  make(chan any),
 		PeerJoin:  make(chan peer.ID, 10),
 		PeerLeave: make(chan peer.ID, 10),
 		PeerIDs:   make(chan []peer.ID, 10),
@@ -72,11 +78,11 @@ func (pubSubService *PubSubService) PubLoop() {
 		case <-pubSubService.psctx.Done():
 			return
 
-		case message := <-pubSubService.Outbound:
+		case packet := <-pubSubService.Outbound:
 			// Create a ChatMessage
 
 			// Marshal the ChatMessage into a JSON
-			messagebytes, err := json.Marshal(message)
+			messagebytes, err := json.Marshal(packet)
 			if err != nil {
 				debug.Log("err", "Could not marshal JSON")
 				continue
@@ -106,7 +112,7 @@ func (pubSubService *PubSubService) SubLoop() {
 
 		default:
 			// Read a message from the subscription
-			message, err := pubSubService.psub.Next(pubSubService.psctx)
+			packet, err := pubSubService.psub.Next(pubSubService.psctx)
 			// Check error
 			if err != nil {
 				// Close the messages queue (subscription has closed)
@@ -116,26 +122,49 @@ func (pubSubService *PubSubService) SubLoop() {
 			}
 
 			// Check if message is from self
-			if message.ReceivedFrom == pubSubService.selfid {
+			if packet.ReceivedFrom == pubSubService.selfid {
 				debug.Log("pubsub", "Sub Message from self")
 			} else {
 				debug.Log("pubsub", "Sub Message from other peer")
 			}
 
-			// Declare a ChatMessage
-			cm := &models.Message{}
-			// Unmarshal the message data into a ChatMessage
-			err = json.Unmarshal(message.Data, cm)
+			// First unmarshal just the envelope to determine the message type
+			envelope := &MessageEnvelope{}
+			err = json.Unmarshal(packet.Data, envelope)
 			if err != nil {
-				debug.Log("err", "Could not unmarshal JSON")
+				debug.Log("err", "Could not unmarshal message envelope: "+err.Error())
 				continue
 			}
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sub Message unmarshalled")
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Sender: " + cm.Sender)
-			// fmt.Println(green + "[chatRoom.go]" + " [" + time.Now().Format("15:04:05") + "] " + reset + "Receiver: " + cm.Receiver)
 
-			// Send the ChatMessage into the message queue
-			pubSubService.Inbound <- *cm
+			// Based on the type, unmarshal into the appropriate struct
+			switch envelope.Type {
+			case "Message":
+				message := &models.Message{}
+				if err := json.Unmarshal(envelope.Data, message); err != nil {
+					debug.Log("err", "Could not unmarshal Message: "+err.Error())
+					continue
+				}
+				pubSubService.Inbound <- *message
+
+			case "FirstMessage":
+				firstMessage := &models.FirstMessage{}
+				if err := json.Unmarshal(envelope.Data, firstMessage); err != nil {
+					debug.Log("err", "Could not unmarshal FirstMessage: "+err.Error())
+					continue
+				}
+				pubSubService.Inbound <- *firstMessage
+
+			case "Account":
+				account := &models.Account{}
+				if err := json.Unmarshal(envelope.Data, account); err != nil {
+					debug.Log("err", "Could not unmarshal Account: "+err.Error())
+					continue
+				}
+				pubSubService.Inbound <- *account
+
+			default:
+				debug.Log("warn", "Unknown message type: "+envelope.Type)
+			}
 		}
 	}
 }

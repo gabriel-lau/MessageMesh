@@ -2,12 +2,17 @@ package backend
 
 import (
 	"crypto"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"io"
 	"os"
+	"sort"
 
 	libp2pcrypto "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -23,6 +28,8 @@ const (
 	file      = "keys.db"
 	dbpath    = directory + "/" + file
 )
+
+var keyMap = map[string][]byte{}
 
 // Generate a new key pair
 func NewKeyPair() (KeyPair, error) {
@@ -197,8 +204,160 @@ func (keypair *KeyPair) EncryptWithPublicKey(plaintext []byte) ([]byte, error) {
 func (keypair *KeyPair) DecryptWithPrivateKey(ciphertext []byte) ([]byte, error) {
 	plaintext, err := rsa.DecryptPKCS1v15(rand.Reader, keypair.PrivateKey.(*rsa.PrivateKey), ciphertext)
 	if err != nil {
-		fmt.Println("Error decrypting message:", err)
+		fmt.Println("Error decrypting message with private key:", err)
 		return nil, err
 	}
+	return plaintext, nil
+}
+
+// GenerateSymmetricKey creates a random symmetric key of specified length
+func GenerateSymmetricKey(length int) ([]byte, error) {
+	key := make([]byte, length)
+	_, err := rand.Read(key)
+	if err != nil {
+		fmt.Println("Error generating symmetric key:", err)
+		return nil, err
+	}
+	fmt.Println("Symmetric key generated:", key)
+	return key, nil
+}
+
+// EncryptWithSymmetricKey encrypts a message using AES-GCM with the symmetric key
+func EncryptWithSymmetricKey(plaintext []byte, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println("Error creating cipher:", err)
+		return nil, err
+	}
+
+	nonce := make([]byte, 12)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		fmt.Println("Error generating nonce:", err)
+		return nil, err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		fmt.Println("Error creating GCM:", err)
+		return nil, err
+	}
+
+	ciphertext := aesgcm.Seal(nonce, nonce, plaintext, nil)
+	return ciphertext, nil
+}
+
+// DecryptWithSymmetricKey decrypts a message using AES-GCM with the symmetric key
+func DecryptWithSymmetricKey(ciphertext []byte, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println("Error creating cipher:", err)
+		return nil, err
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		fmt.Println("Error creating GCM:", err)
+		return nil, err
+	}
+
+	if len(ciphertext) < 12 {
+		return nil, fmt.Errorf("ciphertext too short")
+	}
+
+	nonce, ciphertext := ciphertext[:12], ciphertext[12:]
+	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		fmt.Println("Error decrypting message with symmetric key:", err)
+		return nil, err
+	}
+
+	return plaintext, nil
+}
+
+func SaveSymmetricKey(key []byte, peerIDs []string) error {
+	sort.Strings(peerIDs)
+	keyMap[peerIDs[0]+peerIDs[1]] = key
+	return nil
+}
+
+func GetSymmetricKey(peerIDs []string) ([]byte, error) {
+	sort.Strings(peerIDs)
+	key := keyMap[peerIDs[0]+peerIDs[1]]
+	if key == nil {
+		return nil, fmt.Errorf("symmetric key not found")
+	}
+	return key, nil
+}
+
+// GetPeerPublicKey retrieves the public key of a peer from their peer ID
+func GetPeerPublicKey(p2p *P2PService, peerIDStr string) (libp2pcrypto.PubKey, error) {
+	// Parse the peer ID string
+	peerID, err := peer.Decode(peerIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode peer ID: %s", err.Error())
+	}
+
+	// Extract public key from peer ID
+	pubKey, err := peerID.ExtractPublicKey()
+	if err != nil {
+		// If the public key isn't embedded in the peer ID, try to get it from the peer store
+		pubKey = p2p.Host.Peerstore().PubKey(peerID)
+		if pubKey == nil {
+			return nil, fmt.Errorf("couldn't find public key for peer %s", peerIDStr)
+		}
+	}
+
+	return pubKey, nil
+}
+
+// GetPeerStandardPublicKey retrieves the public key of a peer in standard crypto.PublicKey format
+func GetPeerStandardPublicKey(p2p *P2PService, peerIDStr string) (crypto.PublicKey, error) {
+	pubKey, err := GetPeerPublicKey(p2p, peerIDStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to standard crypto.PublicKey
+	stdPubKey, err := libp2pcrypto.PubKeyToStdKey(pubKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to standard public key: %s", err.Error())
+	}
+
+	return stdPubKey, nil
+}
+
+// EncryptForPeer encrypts a message for a specific peer using their public key
+func EncryptForPeer(p2p *P2PService, message []byte, peerIDStr string) ([]byte, error) {
+	stdPubKey, err := GetPeerStandardPublicKey(p2p, peerIDStr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to RSA public key and encrypt
+	rsaPubKey, ok := stdPubKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("peer's public key is not RSA")
+	}
+
+	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, rsaPubKey, message)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt message: %s", err.Error())
+	}
+
+	return ciphertext, nil
+}
+
+func DecryptWithPrivateKey(ciphertext []byte, privKey crypto.PrivateKey) ([]byte, error) {
+	// Convert to RSA private key and decrypt
+	rsaPrivKey, ok := privKey.(*rsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("peer's private key is not RSA")
+	}
+
+	plaintext, err := rsa.DecryptPKCS1v15(rand.Reader, rsaPrivKey, ciphertext)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt message: %s", err.Error())
+	}
+
 	return plaintext, nil
 }

@@ -48,6 +48,10 @@ func (a *App) SendMessage(message string, receiver string) {
 	a.network.SendMessage(message, receiver)
 }
 
+func (a *App) SendEncryptedMessage(message string, receiver string) {
+	a.network.SendEncryptedMessage(message, receiver)
+}
+
 func (a *App) GetBlockchain() []*models.Block {
 	return a.network.ConsensusService.Blockchain.Chain
 }
@@ -60,6 +64,10 @@ func (a *App) GetMessages() []*models.Message {
 		}
 	}
 	return messages
+}
+
+func (a *App) GetDecryptedMessage(message string, peerIDs []string) (string, error) {
+	return a.network.DecryptMessage(message, peerIDs)
 }
 
 func (a *App) GetMessagesFromPeer(peer string) []*models.Message {
