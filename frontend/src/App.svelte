@@ -78,12 +78,9 @@
     messageMap.forEach((msgs, key) => {
       if (key.includes(peerId) && key.includes(userPeerID)) {
         const message = msgs.map(msg => {
-          return {
-            ...(msg.Data as models.Message),
-            message: GetDecryptedMessage(msg.Data.message, msg.Data.sender)
-          }
+          return msg.Data as models.Message;
         });
-        messages.push(...msgs.map(msg => msg.Data as models.Message));
+        messages.push(...message);
       }
     });
     return messages.sort((a, b) => 

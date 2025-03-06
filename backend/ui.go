@@ -37,6 +37,15 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case block := <-network.ConsensusService.LatestBlock:
 				// Check if the block is a message block
 				if block.BlockType == "message" {
+					peerID := network.PubSubService.selfid.String()
+					// If the message is encrypted, decrypt it
+					if block.Data.(*models.MessageData).Sender == peerID || block.Data.(*models.MessageData).Receiver == peerID {
+						decryptedMessage, err := network.DecryptMessage(block.Data.(*models.MessageData).Message.Message, block.Data.(*models.MessageData).Message.Sender)
+						if err != nil {
+							debug.Log("ui", "Error decrypting message: "+err.Error())
+						}
+						block.Data.(*models.MessageData).Message.Message = decryptedMessage
+					}
 					runtime.EventsEmit(ctx, "getMessage", block.Data.(*models.MessageData).Message)
 					debug.Log("ui", "Message: "+block.Data.(*models.MessageData).Message.Message)
 				}

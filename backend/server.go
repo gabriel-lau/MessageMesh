@@ -3,6 +3,7 @@ package backend
 import (
 	"MessageMesh/backend/models"
 	"MessageMesh/debug"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -127,8 +128,10 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 		debug.Log("server", fmt.Sprintf("Error encrypting message for %s: %s", receiver, err.Error()))
 		return "", err
 	}
+	// Convert to base64 string
+	base64Message := base64.StdEncoding.EncodeToString(encryptedMessage)
 	debug.Log("server", fmt.Sprintf("Encrypted message for %s", receiver))
-	return string(encryptedMessage), nil
+	return base64Message, nil
 }
 
 // Decrypt message with the symmetric key
@@ -146,6 +149,10 @@ func (network *Network) DecryptMessage(message string, sender string) (string, e
 		debug.Log("server", fmt.Sprintf("Symmetric key not found for %s and %s", peerIDs[0], peerIDs[1]))
 		// Check if the firstMessage is shared between the two peers in the blockchain
 		firstMessage := network.ConsensusService.Blockchain.CheckPeerFirstMessage(peerIDs)
+		if firstMessage == nil {
+			debug.Log("server", fmt.Sprintf("First message not found for %s and %s", peerIDs[0], peerIDs[1]))
+			return "", fmt.Errorf("first message not found for %s and %s", peerIDs[0], peerIDs[1])
+		}
 		err = SaveSymmetricKey(symmetricKey, peerIDs)
 		if err != nil {
 			debug.Log("server", fmt.Sprintf("Error saving symmetric key: %s", err.Error()))
@@ -168,8 +175,15 @@ func (network *Network) DecryptMessage(message string, sender string) (string, e
 		}
 	}
 
+	// Decode from base64 first
+	encryptedBytes, err := base64.StdEncoding.DecodeString(message)
+	if err != nil {
+		debug.Log("server", fmt.Sprintf("Error decoding base64 message: %s", err.Error()))
+		return "", err
+	}
+
 	// Decrypt the message with the symmetric key
-	decryptedMessage, err := DecryptWithSymmetricKey([]byte(message), symmetricKey)
+	decryptedMessage, err := DecryptWithSymmetricKey(encryptedBytes, symmetricKey)
 	if err != nil {
 		debug.Log("server", fmt.Sprintf("Error decrypting message: %s", err.Error()))
 		return "", err
