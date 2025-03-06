@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"time"
-
-	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 func (network *Network) ConnectToNetwork() {
@@ -180,11 +178,11 @@ func (network *Network) DecryptMessage(message string, sender string) (string, e
 }
 
 func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (models.FirstMessage, error) {
-	receiverPeerID := peer.ID(receiver)
 	// Check if the user is online
+	debug.Log("server", fmt.Sprintf("Checking if user %s is online", receiver))
 	online := false
 	for _, peer := range network.PubSubService.PeerList() {
-		if peer == receiverPeerID {
+		if peer.String() == receiver {
 			online = true
 			break
 		}
