@@ -29,18 +29,6 @@ const (
 	service = "qwTYmRbuZl"
 )
 
-// A structure that represents a P2P Host
-
-/*
-A constructor function that generates and returns a P2P object.
-
-Constructs a libp2p host with TLS encrypted secure transportation that works over a TCP
-transport connection using a Yamux Stream Multiplexer and uses UPnP for the NAT traversal.
-
-A Kademlia DHT is then bootstrapped on this host using the default peers offered by libp2p
-and a Peer Discovery service is created from this Kademlia DHT. The PubSub handler is then
-created on the host using the peer discovery service created prior.
-*/
 func NewP2PService() *P2PService {
 	// Setup a background context
 	ctx := context.Background()
@@ -71,11 +59,6 @@ func NewP2PService() *P2PService {
 	}
 }
 
-// A method of P2P to connect to service peers.
-// This method uses the Advertise() functionality of the Peer Discovery Service
-// to advertise the service and then disovers all peers advertising the same.
-// The peer discovery is handled by a go-routine that will read from a channel
-// of peer address information until the peer channel closes
 func (p2p *P2PService) AdvertiseConnect() {
 	// Advertise the availabilty of the service on this node
 	ttl, err := p2p.Discovery.Advertise(p2p.Ctx, service)
@@ -101,11 +84,6 @@ func (p2p *P2PService) AdvertiseConnect() {
 	debug.Log("p2p", "Started Peer Connection Handler.")
 }
 
-// A method of P2P to connect to service peers.
-// This method uses the Provide() functionality of the Kademlia DHT directly to announce
-// the ability to provide the service and then disovers all peers that provide the same.
-// The peer discovery is handled by a go-routine that will read from a channel
-// of peer address information until the peer channel closes
 func (p2p *P2PService) AnnounceConnect() {
 	// Generate the Service CID
 	cidvalue := generateCID(service)
@@ -131,8 +109,6 @@ func (p2p *P2PService) AnnounceConnect() {
 	debug.Log("p2p", "Started Peer Connection Handler.")
 }
 
-// A function that generates the p2p configuration options and creates a
-// libp2p host object for the given context. The created host is returned
 func setupHost(ctx context.Context) (host.Host, *dht.IpfsDHT) {
 	// Set up the host identity options
 	// prvkey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
@@ -228,8 +204,6 @@ func setupKadDHT(ctx context.Context, nodehost host.Host) *dht.IpfsDHT {
 	return kaddht
 }
 
-// A function that generates a PubSub Handler object and returns it
-// Requires a node host and a routing discovery service.
 func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *discovery.RoutingDiscovery) *pubsub.PubSub {
 	// Create a new PubSub service which uses a GossipSub router
 	pubsubhandler, err := pubsub.NewGossipSub(ctx, nodehost, pubsub.WithDiscovery(routingdiscovery))
@@ -244,8 +218,6 @@ func setupPubSub(ctx context.Context, nodehost host.Host, routingdiscovery *disc
 	return pubsubhandler
 }
 
-// A function that bootstraps a given Kademlia DHT to satisfy the IPFS router
-// interface and connects to all the bootstrap peers provided by libp2p
 func bootstrapDHT(ctx context.Context, nodehost host.Host, kaddht *dht.IpfsDHT) {
 	// Bootstrap the DHT to satisfy the IPFS Router interface
 	if err := kaddht.Bootstrap(ctx); err != nil {
@@ -294,8 +266,6 @@ func bootstrapDHT(ctx context.Context, nodehost host.Host, kaddht *dht.IpfsDHT) 
 	debug.Log("p2p", fmt.Sprintf("Connected to %d out of %d Bootstrap Peers.", connectedbootpeers, totalbootpeers))
 }
 
-// A function that connects the given host to all peers recieved from a
-// channel of peer address information. Meant to be started as a go routine.
 func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 	// Iterate over the peer channel
 	for peer := range peerchan {
@@ -312,9 +282,6 @@ func handlePeerDiscovery(nodehost host.Host, peerchan <-chan peer.AddrInfo) {
 	}
 }
 
-// A function that generates a CID object for a given string and returns it.
-// Uses SHA256 to hash the string and generate a multihash from it.
-// The mulithash is then base58 encoded and then used to create the CID
 func generateCID(namestring string) cid.Cid {
 	// Hash the service content ID with SHA256
 	hash := sha256.Sum256([]byte(namestring))
@@ -338,7 +305,6 @@ func generateCID(namestring string) cid.Cid {
 	return cidvalue
 }
 
-// Get all the nodes multiaddress in the network (including self)
 func (p2p *P2PService) AllNodeAddr() []string {
 	var addrs []string
 	for _, addr := range p2p.Host.Addrs() {
