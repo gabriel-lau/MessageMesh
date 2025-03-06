@@ -278,12 +278,12 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			// }
 
 		// Check if we are connected to the consensus
-		case <-time.After(5 * time.Second):
-			if raftInstance.Leader() != "" {
-				network.ConsensusService.Connected <- true
-			} else {
-				network.ConsensusService.Connected <- false
-			}
+		// case <-time.After(5 * time.Second):
+		// 	if raftInstance.Leader() != "" {
+		// 		network.ConsensusService.Connected <- true
+		// 	} else {
+		// 		network.ConsensusService.Connected <- false
+		// 	}
 
 		case inbound := <-network.PubSubService.Inbound:
 			// If inbound is a message
