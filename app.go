@@ -66,8 +66,8 @@ func (a *App) GetMessages() []*models.Message {
 	return messages
 }
 
-func (a *App) GetDecryptedMessage(message string, sender string) (string, error) {
-	return a.network.DecryptMessage(message, sender)
+func (a *App) GetDecryptedMessage(message string, peerIDs []string) (string, error) {
+	return a.network.DecryptMessage(message, peerIDs)
 }
 
 func (a *App) GetMessagesFromPeer(peer string) []*models.Message {

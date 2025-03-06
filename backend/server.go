@@ -135,9 +135,7 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 }
 
 // Decrypt message with the symmetric key
-func (network *Network) DecryptMessage(message string, sender string) (string, error) {
-	receiver := network.PubSubService.SelfID().String()
-	peerIDs := []string{sender, receiver}
+func (network *Network) DecryptMessage(message string, peerIDs []string) (string, error) {
 	sort.Strings(peerIDs)
 	// Get the symmetric key for the two peers if it is saved
 	symmetricKey, err := GetSymmetricKey(peerIDs)
@@ -153,22 +151,25 @@ func (network *Network) DecryptMessage(message string, sender string) (string, e
 			debug.Log("server", fmt.Sprintf("First message not found for %s and %s", peerIDs[0], peerIDs[1]))
 			return "", fmt.Errorf("first message not found for %s and %s", peerIDs[0], peerIDs[1])
 		}
-		err = SaveSymmetricKey(symmetricKey, peerIDs)
-		if err != nil {
-			debug.Log("server", fmt.Sprintf("Error saving symmetric key: %s", err.Error()))
-			return "", err
-		}
 		keyPair, err := ReadKeyPair()
 		if err != nil {
 			debug.Log("server", fmt.Sprintf("Error reading key pair: %s", err.Error()))
 			return "", err
 		}
+		debug.Log("server", "Reading key pair")
 		// If the first message is found, decrypt the symmetric key with the private key
 		if firstMessage != nil {
-			symmetricKey, err = keyPair.DecryptWithPrivateKey(firstMessage.GetSymetricKey(receiver))
+			symmetricKey, err = keyPair.DecryptWithPrivateKey(firstMessage.GetSymetricKey(network.PubSubService.selfid.String()))
 			if err != nil {
-				debug.Log("server", fmt.Sprintf("Error getting symmetric key for %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
+				debug.Log("server", fmt.Sprintf("Error decrypting symmetric key for %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
 			}
+			debug.Log("server", fmt.Sprintf("Decrypted symmetric key for %s and %s", peerIDs[0], peerIDs[1]))
+			err = SaveSymmetricKey(symmetricKey, peerIDs)
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error saving symmetric key: %s", err.Error()))
+				return "", err
+			}
+			debug.Log("server", fmt.Sprintf("Saved symmetric key for %s and %s", peerIDs[0], peerIDs[1]))
 		} else {
 			debug.Log("server", fmt.Sprintf("First message not found for %s and %s", peerIDs[0], peerIDs[1]))
 			return "", fmt.Errorf("first message not found for %s and %s", peerIDs[0], peerIDs[1])

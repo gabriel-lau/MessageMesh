@@ -43,7 +43,9 @@
           messageMap.get(key)?.push(block);
         }
         if (selectedPeer && (message.sender === selectedPeer || message.receiver === selectedPeer)) {
-          messages = getMessagesForPeer(selectedPeer);
+          getMessagesForPeer([selectedPeer, userPeerID]).then(msgs => {
+            messages = msgs;
+          });
         }
       } else if (block.BlockType === "account") {
         const account: models.Account = block.Data;
@@ -73,26 +75,30 @@
     return [sender, receiver].sort().join(':');
   }
 
-  function getMessagesForPeer(peerId: string): models.Message[] {
+  async function getMessagesForPeer(peerIDs: string[]): Promise<models.Message[]> {
     const messages: models.Message[] = [];
-    messageMap.forEach((msgs, key) => {
-      if (key.includes(peerId) && key.includes(userPeerID)) {
-        const message = msgs.map(msg => {
-          return msg.Data as models.Message;
-        });
-        messages.push(...message);
+    for (const [key, msgs] of messageMap.entries()) {
+      if (getMessageKey(peerIDs[0], peerIDs[1]) === key) {
+        for (const msg of msgs) {
+          const decryptedMessage = await GetDecryptedMessage(msg.Data.message, peerIDs);
+          messages.push({
+            ...msg.Data,
+            message: decryptedMessage
+          } as models.Message);
+        }
       }
-    });
+    }
     return messages.sort((a, b) => 
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
   }
 
   // Bind these to child components
-  messages = getMessagesForPeer(selectedPeer);
   $effect(() => {
     if (selectedPeer) {
-      messages = getMessagesForPeer(selectedPeer);
+      getMessagesForPeer([selectedPeer, userPeerID]).then(msgs => {
+        messages = msgs;
+      });
     }
   });
 
