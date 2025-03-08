@@ -204,6 +204,13 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 				}
 			}
 			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
+
+		case <-raftInstance.LeaderCh():
+			debug.Log("raft", "Leader changed")
+			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
+			if string(raftInstance.Leader()) == network.PubSubService.SelfID().String() {
+				debug.Log("raft", "I am the leader")
+			}
 		}
 	}
 }
@@ -246,11 +253,6 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 				Data:      latestBlock.Data,
 			}
 
-		// Leader changed
-		case <-raftInstance.LeaderCh():
-			debug.Log("raft", "Leader changed")
-			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
-
 		case inbound := <-network.PubSubService.Inbound:
 			// If inbound is a message
 			if message, ok := inbound.(models.Message); ok {
@@ -292,7 +294,7 @@ func addFirstMessageBlock(network *Network, firstMessage models.FirstMessage, ra
 		if currentState := network.ConsensusService.Blockchain.Chain; currentState != nil {
 			for _, block := range currentState {
 				if block.BlockType == "firstMessage" {
-					if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[0]) {
+					if block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[1] {
 						debug.Log("raft", fmt.Sprintf("First message block already exists: %s and %s", block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0], block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1]))
 						return
 					}
