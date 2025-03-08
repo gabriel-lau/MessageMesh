@@ -58,9 +58,8 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 		}
 		for _, block := range currentState.Blockchain.Chain {
 			if block.BlockType == "firstMessage" {
-				firstMessage := block.Data.(*models.FirstMessageData).FirstMessage
 				sort.Strings(o.FirstMessage.PeerIDs)
-				if (firstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[0] && firstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[1]) || (firstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[1] && firstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[0]) {
+				if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[0]) {
 					return currentState, fmt.Errorf("first message peer IDs already in the blockchain")
 				}
 			}
