@@ -221,7 +221,6 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 }
 
 func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
-
 	for {
 		select {
 		// New block added to the blockchain
