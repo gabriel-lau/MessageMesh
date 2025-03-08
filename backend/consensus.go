@@ -52,9 +52,6 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 		if o.FirstMessage.SymetricKey0 == nil || o.FirstMessage.SymetricKey1 == nil {
 			return currentState, fmt.Errorf("first message symetric keys cannot be empty")
 		}
-		if len(o.FirstMessage.SymetricKey0) != 32 || len(o.FirstMessage.SymetricKey1) != 32 {
-			return currentState, fmt.Errorf("first message symetric keys must be 32 bytes")
-		}
 	}
 
 	// Apply the operation if validation passed
