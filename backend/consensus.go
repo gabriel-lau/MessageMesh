@@ -209,7 +209,7 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 			if leader {
 				debug.Log("raft", "I am the leader")
 				go func() {
-					time.Sleep(10 * time.Second)
+					time.Sleep(5 * time.Minute)
 					debug.Log("raft", "Transferring leadership")
 					raftInstance.LeadershipTransfer()
 				}()
@@ -226,6 +226,7 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		select {
 		// New block added to the blockchain
 		case <-raftconsensus.Subscribe():
+			// First time the blockchain is updated
 			newState, _ := raftconsensus.GetCurrentState()
 			blockchain := newState.(*raftState).Blockchain
 			debug.Log("raft", fmt.Sprintf("Blockchain updated, current length: %d", len(blockchain.Chain)))
