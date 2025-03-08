@@ -1,3 +1,5 @@
+# ⚠️⚠️ WORK IN PROGRESS ⚠️⚠️
+
 # MessageMesh
 
 A decentralized, peer-to-peer messaging application built with Wails, Go, Svelte, and TypeScript. MessageMesh uses a Raft consensus algorithm to maintain a consistent state between all nodes in the network, ensuring secure and reliable communication.
@@ -60,7 +62,7 @@ MessageMesh/
 - [pnpm](https://pnpm.io/) (version 9 or later)
 - [Wails CLI](https://wails.io/docs/gettingstarted/installation)
 
-### Installation
+### Installation (Work in Progress) (Wails Installation)
 
 1. Clone the repository:
    ```bash
@@ -111,22 +113,12 @@ wails build
 
 The compiled binaries will be available in the `build/bin` directory.
 
-## Usage
+## Usage (Work in Progress) (Screenshots)
 
 1. **Starting the Application**: Launch the application from the executable or using `wails dev`
 2. **Connecting to Peers**: The application will automatically discover and connect to peers on the same network
 3. **Sending Messages**: Select a peer from the list and compose your message
 4. **Viewing Messages**: All messages are displayed in the conversation view and stored in the local blockchain
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 
