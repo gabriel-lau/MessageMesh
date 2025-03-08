@@ -20,7 +20,6 @@
         <div class="flex items-center place-content-between w-full">
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-gray-900 truncate dark:text-white">{peer}</p>
-            <!-- <p class="text-sm text-gray-500 truncate dark:text-gray-400">email@flowbite.com</p> -->
           </div>
           <Badge color="green" rounded class="px-2.5 py-0.5">
             <Indicator color="green" size="xs" class="me-1" />Available

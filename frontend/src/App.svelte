@@ -6,10 +6,11 @@
   import * as Wails from '../wailsjs/runtime/runtime.js';
   import { models } from '../wailsjs/go/models.js';
   import { GetMessagesFromPeer, GetDecryptedMessage } from '../wailsjs/go/main/App.js';
+    import { Spinner } from 'flowbite-svelte';
 
   let selectedPeer = $state('');
   let userPeerID = $state('');
-  let ready = $state(false);
+  let online = $state(false);
   let peerList = $state<string[]>([]);
   let messages = $state<models.Message[]>([]);
   let accounts = $state<models.Account[]>([]);
@@ -23,15 +24,13 @@
     userPeerID = data;
   });
 
-  Wails.EventsOn("ready", () => {
-    ready = true;
-  });
   Wails.EventsOn("getAccounts", (data: models.Account[]) => {
     accounts = data;
   });
 
   // Load initial blockchain data
   Wails.EventsOn("getBlockchain", (blocks: models.Block[]) => {
+    online = true;
     console.log("getBlockchain", blocks);
     blocks.forEach(block => {
       if (block.BlockType === "message") {
@@ -106,11 +105,20 @@
 
 <main>
   <div class="flex w-screen h-screen bg-primary-50 dark:bg-gray-900">
-    <NavigationRailComponent bind:peerList></NavigationRailComponent>
+    <!-- If online is false, show a loading screen -->
+    {#if !online}
+      <div class="flex flex-col items-center justify-center h-full w-full">
+        <Spinner size={8} />
+        <div class="text-2xl font-bold">Connecting to network...</div>
+      </div>
+    {/if}
+    {#if online}
+    <NavigationRailComponent bind:peerList bind:online></NavigationRailComponent>
     <div class="flex flex-row w-full">
-      <ChatListComponent bind:selectedPeer bind:peerList></ChatListComponent>
-      <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
-    </div>
+        <ChatListComponent bind:selectedPeer bind:peerList></ChatListComponent>
+        <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
+      </div>
+    {/if}
   </div>
 </main>
 

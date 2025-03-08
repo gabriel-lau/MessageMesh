@@ -5,7 +5,6 @@ import (
 	"MessageMesh/debug"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -13,10 +12,7 @@ import (
 
 func UIDataLoop(network Network, ctx context.Context) {
 	debug.Log("ui", "Wails events emitter started")
-	// Emit ready event
 	if !debug.IsHeadless {
-		runtime.EventsEmit(ctx, "ready")
-		// Send the user's peer ID once to the frontend and then remove the event listener
 		runtime.EventsEmit(ctx, "getUserPeerID", network.P2pService.Host.ID())
 		runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
 		for {
@@ -25,14 +21,9 @@ func UIDataLoop(network Network, ctx context.Context) {
 				runtime.EventsEmit(ctx, "getPeerList", peerIDs)
 				debug.Log("ui", "Peers: "+string(len(peerIDs)))
 
-			case connected := <-network.ConsensusService.Connected:
-				runtime.EventsEmit(ctx, "getConnected", connected)
-				debug.Log("ui", "Consensus connected: "+fmt.Sprint(connected))
-
 			// repeat this every 10 seconds
 			case <-time.After(10 * time.Second):
 				runtime.EventsEmit(ctx, "getPeerList", network.PubSubService.PeerList())
-				runtime.EventsEmit(ctx, "getConnected", network.ConsensusService.Connected)
 
 			case block := <-network.ConsensusService.LatestBlock:
 				// Check if the block is a message block
