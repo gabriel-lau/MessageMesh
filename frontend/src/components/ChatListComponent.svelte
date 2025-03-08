@@ -12,7 +12,7 @@
     <h3 class="p-1 text-center text-xl font-medium text-gray-900 dark:text-white">Chats</h3>
     {#each peerList as peer}
       <ListgroupItem 
-        class="text-base font-semibold gap-2" 
+        class="text-base font-semibold gap-2 hover:bg-primary-100 dark:hover:bg-gray-900 {selectedPeer === peer ? 'bg-gray-100 dark:bg-gray-900' : ''}" 
         attrs={{
           onclick: () => selectPeer(peer)
         }}

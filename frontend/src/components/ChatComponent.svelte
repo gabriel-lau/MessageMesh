@@ -48,7 +48,7 @@
   <div id="navbar" class="flex-none">
     <Navbar>
       <NavBrand href="#">
-        <span class="self-center whitespace-nowrap text-xl font-semibold text-ellipsis dark:text-white">
+        <span class="self-center whitespace-nowrap text-xl font-semibold text-ellipsis dark:text-white max-w-96">
           {selectedPeer || 'Select a chat'}
         </span>
       </NavBrand>
