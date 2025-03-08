@@ -95,6 +95,7 @@
   // Bind these to child components
   $effect(() => {
     if (selectedPeer) {
+      messages = [];
       getMessagesForPeer([selectedPeer, userPeerID]).then(msgs => {
         messages = msgs;
       });

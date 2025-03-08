@@ -84,7 +84,7 @@ func (network *Network) EncryptMessage(message string, receiver string) (string,
 	}
 	// If the symmetric key is not found check the blockchain for a first message
 	if symmetricKey == nil {
-		debug.Log("server", fmt.Sprintf("Symmetric key not found for %s and %s", peerIDs[0], peerIDs[1]))
+		debug.Log("server", fmt.Sprintf("Symmetric key not found in keyMap for %s and %s", peerIDs[0], peerIDs[1]))
 		// Check if the firstMessage is shared between the two peers in the blockchain
 		firstMessage := network.ConsensusService.Blockchain.CheckPeerFirstMessage(peerIDs)
 		keyPair, err := ReadKeyPair()
@@ -138,7 +138,7 @@ func (network *Network) DecryptMessage(message string, peerIDs []string) (string
 	}
 	// If the symmetric key is not found check the blockchain for a first message
 	if symmetricKey == nil {
-		debug.Log("server", fmt.Sprintf("Symmetric key not found for %s and %s", peerIDs[0], peerIDs[1]))
+		debug.Log("server", fmt.Sprintf("Symmetric key not found in keyMap for %s and %s", peerIDs[0], peerIDs[1]))
 		// Check if the firstMessage is shared between the two peers in the blockchain
 		firstMessage := network.ConsensusService.Blockchain.CheckPeerFirstMessage(peerIDs)
 		if firstMessage == nil {
@@ -187,6 +187,7 @@ func (network *Network) DecryptMessage(message string, peerIDs []string) (string
 }
 
 func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (models.FirstMessage, error) {
+	sort.Strings(peerIDs)
 	// Check if the user is online
 	debug.Log("server", fmt.Sprintf("Checking if user %s is online", receiver))
 	online := false
