@@ -37,20 +37,6 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case block := <-network.ConsensusService.LatestBlock:
 				// Check if the block is a message block
 				if block.BlockType == "message" {
-					// peerID := network.PubSubService.selfid.String()
-					// If the message is encrypted, decrypt it
-					// if block.Data.(*models.MessageData).Sender == peerID || block.Data.(*models.MessageData).Receiver == peerID {
-					// 	// Add debug logging
-					// 	debug.Log("ui", fmt.Sprintf("Attempting to decrypt message: %s", block.Data.(*models.MessageData).Message.Message))
-
-					// 	decryptedMessage, err := network.DecryptMessage(block.Data.(*models.MessageData).Message.Message, block.Data.(*models.MessageData).Message.Sender)
-					// 	if err != nil {
-					// 		debug.Log("ui", "Error decrypting message: "+err.Error())
-					// 	} else {
-					// 		debug.Log("ui", fmt.Sprintf("Successfully decrypted message: %s", decryptedMessage))
-					// 	}
-					// 	block.Data.(*models.MessageData).Message.Message = decryptedMessage
-					// }
 					runtime.EventsEmit(ctx, "getMessage", block.Data.(*models.MessageData).Message)
 					debug.Log("ui", "Message: "+block.Data.(*models.MessageData).Message.Message)
 				}
@@ -73,7 +59,7 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case block := <-network.ConsensusService.LatestBlock:
 				debug.Log("ui", "Block: "+block.BlockType)
 			case <-time.After(30 * time.Second):
-				network.SendEncryptedMessage("Hello I am "+debug.Username, "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
+				network.SendEncryptedMessage("Its "+time.Now().Format("2006-01-02 15:04:05")+" I am "+debug.Username, "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
 			case <-ctx.Done():
 				return
 			}
