@@ -27,7 +27,6 @@ type raftOP struct {
 func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 	currentState := state.(*raftState)
 
-	// Validate operation before applying
 	switch o.Type {
 	case "ADD_MESSAGE_BLOCK":
 		if o.Message.Sender == "" || o.Message.Receiver == "" || o.Message.Message == "" {
@@ -55,16 +54,6 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 		}
 		if len(o.FirstMessage.SymetricKey0) != 32 || len(o.FirstMessage.SymetricKey1) != 32 {
 			return currentState, fmt.Errorf("first message symetric keys must be 32 bytes")
-		}
-		if currentState.Blockchain.Chain != nil {
-			for _, block := range currentState.Blockchain.Chain {
-				if block.BlockType == "firstMessage" {
-					sort.Strings(o.FirstMessage.PeerIDs)
-					if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[0]) {
-						return currentState, fmt.Errorf("first message peer IDs already in the blockchain")
-					}
-				}
-			}
 		}
 	}
 
@@ -223,20 +212,6 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 }
 
 func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
-	// var leaderTimeoutTimer *time.Timer
-	// var leaderTimeoutDuration = 5 * time.Minute
-
-	// // Function to handle leader timeout
-	// handleLeaderTimeout := func() {
-	// 	if actor.IsLeader() {
-	// 		debug.Log("raft", "Leader timeout reached after 5 minutes, stepping down")
-	// 		// Use leadership transfer to gracefully step down
-	// 		err := raftInstance.LeadershipTransfer().Error()
-	// 		if err != nil {
-	// 			debug.Log("err", fmt.Sprintf("Failed to transfer leadership: %v", err))
-	// 		}
-	// 	}
-	// }
 
 	for {
 		select {
@@ -279,26 +254,6 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 			debug.Log("raft", "Leader changed")
 			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
 
-			// // If there's an existing timer, stop it
-			// if leaderTimeoutTimer != nil {
-			// 	leaderTimeoutTimer.Stop()
-			// 	leaderTimeoutTimer = nil
-			// }
-
-			// // If we became the leader, start a new timeout timer
-			// if isLeader {
-			// 	debug.Log("raft", fmt.Sprintf("We are now the leader, will step down after %v", leaderTimeoutDuration))
-			// 	leaderTimeoutTimer = time.AfterFunc(leaderTimeoutDuration, handleLeaderTimeout)
-			// }
-
-		// Check if we are connected to the consensus
-		// case <-time.After(5 * time.Second):
-		// 	if raftInstance.Leader() != "" {
-		// 		network.ConsensusService.Connected <- true
-		// 	} else {
-		// 		network.ConsensusService.Connected <- false
-		// 	}
-
 		case inbound := <-network.PubSubService.Inbound:
 			// If inbound is a message
 			if message, ok := inbound.(models.Message); ok {
@@ -336,6 +291,17 @@ func addMessageBlock(network *Network, message models.Message, raftconsensus *li
 
 func addFirstMessageBlock(network *Network, firstMessage models.FirstMessage, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
 	if actor.IsLeader() {
+		sort.Strings(firstMessage.PeerIDs)
+		currentState, _ := raftconsensus.GetCurrentState()
+		for _, block := range currentState.(*raftState).Blockchain.Chain {
+			if block.BlockType == "firstMessage" {
+				if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[0]) {
+					debug.Log("raft", fmt.Sprintf("First message block already exists: %s and %s", block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0], block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1]))
+					return
+				}
+			}
+		}
+
 		debug.Log("raft", fmt.Sprintf("Adding first message block: %s and %s", firstMessage.PeerIDs[0], firstMessage.PeerIDs[1]))
 		op := &raftOP{
 			Type: "ADD_FIRST_MESSAGE_BLOCK",
