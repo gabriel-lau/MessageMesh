@@ -28,9 +28,12 @@
     accounts = data;
   });
 
+  Wails.EventsOn("getConnected", (data: boolean) => {
+    online = data;
+  });
+
   // Load initial blockchain data
   Wails.EventsOn("getBlockchain", (blocks: models.Block[]) => {
-    online = true;
     console.log("getBlockchain", blocks);
     blocks.forEach(block => {
       if (block.BlockType === "message") {

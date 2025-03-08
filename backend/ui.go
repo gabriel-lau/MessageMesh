@@ -42,6 +42,9 @@ func UIDataLoop(network Network, ctx context.Context) {
 
 				runtime.EventsEmit(ctx, "getBlock", block)
 				runtime.EventsEmit(ctx, "getBlockchain", network.ConsensusService.Blockchain.Chain)
+
+			case <-network.ConsensusService.Connected:
+				runtime.EventsEmit(ctx, "getConnected", true)
 			}
 		}
 	} else {
