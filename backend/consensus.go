@@ -275,6 +275,14 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 func addMessageBlock(network *Network, message models.Message, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
 	if actor.IsLeader() {
 		debug.Log("raft", fmt.Sprintf("Adding message block: %s", message.Message))
+		if message.Sender == "" || message.Receiver == "" || message.Message == "" {
+			debug.Log("raft", "Message is missing required fields")
+			return
+		}
+		if message.Sender == message.Receiver {
+			debug.Log("raft", "Message sender and receiver cannot be the same")
+			return
+		}
 		// Create a message block using the new structure
 		op := &raftOP{
 			Type: "ADD_MESSAGE_BLOCK",
@@ -305,6 +313,18 @@ func addFirstMessageBlock(network *Network, firstMessage models.FirstMessage, ra
 					}
 				}
 			}
+		}
+		if len(firstMessage.PeerIDs) != 2 {
+			debug.Log("raft", "First message peer IDs must be exactly 2")
+			return
+		}
+		if firstMessage.PeerIDs[0] == "" || firstMessage.PeerIDs[1] == "" {
+			debug.Log("raft", "First message peer IDs cannot be empty")
+			return
+		}
+		if firstMessage.SymetricKey0 == nil || firstMessage.SymetricKey1 == nil {
+			debug.Log("raft", "First message symetric keys cannot be empty")
+			return
 		}
 
 		debug.Log("raft", fmt.Sprintf("Adding first message block: %s and %s", firstMessage.PeerIDs[0], firstMessage.PeerIDs[1]))
