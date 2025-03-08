@@ -3,6 +3,7 @@ package backend
 import (
 	"MessageMesh/debug"
 	"fmt"
+	"sort"
 	"time"
 
 	"MessageMesh/backend/models"
@@ -51,6 +52,18 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 		}
 		if o.FirstMessage.SymetricKey0 == nil || o.FirstMessage.SymetricKey1 == nil {
 			return currentState, fmt.Errorf("first message symetric keys cannot be empty")
+		}
+		if len(o.FirstMessage.SymetricKey0) != 32 || len(o.FirstMessage.SymetricKey1) != 32 {
+			return currentState, fmt.Errorf("first message symetric keys must be 32 bytes")
+		}
+		for _, block := range currentState.Blockchain.Chain {
+			if block.BlockType == "firstMessage" {
+				firstMessage := block.Data.(*models.FirstMessageData).FirstMessage
+				sort.Strings(o.FirstMessage.PeerIDs)
+				if (firstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[0] && firstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[1]) || (firstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[1] && firstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[0]) {
+					return currentState, fmt.Errorf("first message peer IDs already in the blockchain")
+				}
+			}
 		}
 	}
 
