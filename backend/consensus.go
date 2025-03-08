@@ -289,12 +289,13 @@ func addMessageBlock(network *Network, message models.Message, raftconsensus *li
 func addFirstMessageBlock(network *Network, firstMessage models.FirstMessage, raftconsensus *libp2praft.Consensus, actor *libp2praft.Actor) {
 	if actor.IsLeader() {
 		sort.Strings(firstMessage.PeerIDs)
-		currentState, _ := raftconsensus.GetCurrentState()
-		for _, block := range currentState.(*raftState).Blockchain.Chain {
-			if block.BlockType == "firstMessage" {
-				if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[0]) {
-					debug.Log("raft", fmt.Sprintf("First message block already exists: %s and %s", block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0], block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1]))
-					return
+		if currentState, _ := raftconsensus.GetCurrentState(); currentState.(*raftState).Blockchain.Chain != nil {
+			for _, block := range currentState.(*raftState).Blockchain.Chain {
+				if block.BlockType == "firstMessage" {
+					if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == firstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == firstMessage.PeerIDs[0]) {
+						debug.Log("raft", fmt.Sprintf("First message block already exists: %s and %s", block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0], block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1]))
+						return
+					}
 				}
 			}
 		}
