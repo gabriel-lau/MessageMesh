@@ -56,11 +56,13 @@ func (o *raftOP) ApplyTo(state consensus.State) (consensus.State, error) {
 		if len(o.FirstMessage.SymetricKey0) != 32 || len(o.FirstMessage.SymetricKey1) != 32 {
 			return currentState, fmt.Errorf("first message symetric keys must be 32 bytes")
 		}
-		for _, block := range currentState.Blockchain.Chain {
-			if block.BlockType == "firstMessage" {
-				sort.Strings(o.FirstMessage.PeerIDs)
-				if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[0]) {
-					return currentState, fmt.Errorf("first message peer IDs already in the blockchain")
+		if currentState.Blockchain.Chain != nil {
+			for _, block := range currentState.Blockchain.Chain {
+				if block.BlockType == "firstMessage" {
+					sort.Strings(o.FirstMessage.PeerIDs)
+					if (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[0] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[1]) || (block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[0] == o.FirstMessage.PeerIDs[1] && block.Data.(*models.FirstMessageData).FirstMessage.PeerIDs[1] == o.FirstMessage.PeerIDs[0]) {
+						return currentState, fmt.Errorf("first message peer IDs already in the blockchain")
+					}
 				}
 			}
 		}
