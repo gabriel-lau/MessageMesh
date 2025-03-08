@@ -284,7 +284,7 @@ func GetSymmetricKey(peerIDs []string) ([]byte, error) {
 	sort.Strings(peerIDs)
 	key := keyMap[peerIDs[0]+peerIDs[1]]
 	if key == nil {
-		return nil, fmt.Errorf("symmetric key not found")
+		return nil, fmt.Errorf("symmetric key not found in keyMap")
 	}
 	return key, nil
 }
