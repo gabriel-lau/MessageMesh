@@ -3,15 +3,26 @@ package backend
 import (
 	"MessageMesh/backend/models"
 	"MessageMesh/debug"
+	"MessageMesh/monitoring"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"time"
 )
 
 func (network *Network) ConnectToNetwork() {
 	debug.Log("server", "This may take upto 30 seconds.")
+
+	// Initialize system monitor
+	monitor, err := monitoring.NewSystemMonitor()
+	if err != nil {
+		debug.Log("server", fmt.Sprintf("Failed to initialize system monitor: %s", err.Error()))
+	} else {
+		// Start periodic monitoring
+		go network.runMonitoring(monitor)
+	}
 
 	// Create a new P2PHost
 	network.P2pService = NewP2PService()
@@ -256,4 +267,57 @@ func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (mod
 	}
 	debug.Log("server", fmt.Sprintf("First message sent to %s and %s", peerID0, peerID1))
 	return firstMessage, nil
+}
+
+func (network *Network) runMonitoring(monitor *monitoring.SystemMonitor) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			stats, err := monitor.Collect()
+			// if err == nil {
+			// 	debug.Log("monitor", stats.String())
+			// }
+			statsMap := map[string]interface{}{
+				"cpu": map[string]interface{}{
+					"usage":        stats.CPUUsage,
+					"processUsage": stats.ProcessCPU,
+				},
+				"memory": map[string]interface{}{
+					"total":        stats.MemoryTotal,
+					"used":         stats.MemoryUsed,
+					"free":         stats.MemoryFree,
+					"usagePercent": stats.MemoryUsagePerc,
+					"processUsage": stats.ProcessMemory,
+				},
+				"network": map[string]interface{}{
+					"bytesSent":       stats.BytesSent,
+					"bytesReceived":   stats.BytesRecv,
+					"packetsSent":     stats.PacketsSent,
+					"packetsReceived": stats.PacketsRecv,
+					"speed":           stats.NetworkSpeed,
+				},
+				"runtime": map[string]interface{}{
+					"goroutines": stats.NumGoroutines,
+					"numCPU":     stats.NumCPU,
+				},
+				"timestamp": stats.Timestamp,
+			}
+			jsonData, err := json.Marshal(statsMap)
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error marshaling stats map: %s", err.Error()))
+			}
+			// Append to the file
+			os.MkdirAll("stats", 0755)
+			file, err := os.OpenFile("stats/system_stats.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error opening file: %s", err.Error()))
+			}
+			defer file.Close()
+			file.Write(jsonData)
+			file.Write([]byte("\n"))
+		}
+	}
 }
