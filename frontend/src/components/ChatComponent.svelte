@@ -1,12 +1,14 @@
 <script lang="ts">
-  import { Badge, Indicator, Textarea, ToolbarButton } from 'flowbite-svelte';
-  import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
+  import { Input, Textarea, ToolbarButton } from 'flowbite-svelte';
+  import { Navbar, NavBrand } from 'flowbite-svelte';
   import { PaperPlaneOutline } from 'flowbite-svelte-icons';
-  import { SendMessage, SendEncryptedMessage } from '../../wailsjs/go/main/App.js';
+  import { SendEncryptedMessage } from '../../wailsjs/go/main/App.js';
   import { models } from '../../wailsjs/go/models.js';
   let { userPeerID = $bindable<string>(), selectedPeer = $bindable<string>(), messages = $bindable<models.Message[]>([]) } = $props();
   
   let message = $state('');
+  let lastSentTimestamp: number | null = $state(null);
+  let messageLatencies: number[] = $state([]);
   let messagesContainer: HTMLDivElement;
   
   function scrollToBottom(): void {
@@ -21,9 +23,21 @@
     }
   });
 
+  $effect(() => {
+    if (messages && lastSentTimestamp) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.sender === userPeerID) {
+        const latency = Date.now() - lastSentTimestamp;
+        messageLatencies.push(latency);
+        console.log(`Message latency: ${latency}ms`);
+        lastSentTimestamp = null;
+      }
+    }
+  });
+
   function sendMessage(): void {
     if (!selectedPeer) return; // Don't send if no peer is selected
-    // SendMessage(message, selectedPeer);
+    lastSentTimestamp = Date.now();
     SendEncryptedMessage(message, selectedPeer);
     message = '';
   }
@@ -34,16 +48,10 @@
   <div id="navbar" class="flex-none">
     <Navbar>
       <NavBrand href="#">
-        <span class="self-center whitespace-nowrap text-xl font-semibold text-ellipsis dark:text-white">
+        <span class="self-center whitespace-nowrap text-xl font-semibold text-ellipsis dark:text-white max-w-96">
           {selectedPeer || 'Select a chat'}
         </span>
       </NavBrand>
-      <!-- <NavHamburger />
-      <NavUl>
-        <Badge color="red" rounded class="px-2.5 py-0.5">
-          <Indicator color="red" size="xs" class="me-1" />Unavailable
-        </Badge>
-      </NavUl> -->
     </Navbar>
   </div>
 
@@ -76,10 +84,11 @@
   <!-- Fixed message input at bottom -->
   <div id="message-input" class="flex-none">
     <label for="chat" class="sr-only">Your message</label>
-    <div class="flex items-center px-3 py-2 rounded-none bg-gray-50 dark:bg-gray-700">
-      <Textarea 
+      <form class="flex items-center px-3 py-2 rounded-none bg-gray-50 dark:bg-gray-700" on:submit|preventDefault={sendMessage}>
+        <Input
         bind:value={message} 
         id="chat" 
+        size="lg" 
         class="mx-4 bg-white dark:bg-gray-800 h-10 min-h-10 max-h-20" 
         placeholder="Your message..." 
       />
@@ -91,7 +100,7 @@
         <PaperPlaneOutline class="w-6 h-6 rotate-45" />
         <span class="sr-only">Send message</span>
       </ToolbarButton>
-    </div>
+    </form>
   </div>
 </div>
 

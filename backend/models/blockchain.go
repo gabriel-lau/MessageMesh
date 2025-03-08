@@ -124,6 +124,7 @@ func (bc *Blockchain) AddAccountBlock(account Account) *Block {
 
 func (bc *Blockchain) AddFirstMessageBlock(firstMessage FirstMessage) *Block {
 	prevBlock := bc.Chain[len(bc.Chain)-1]
+	sort.Strings(firstMessage.PeerIDs)
 	newBlock := &Block{
 		Index:     prevBlock.Index + 1,
 		Timestamp: time.Now().Unix(),

@@ -218,7 +218,7 @@ func GenerateSymmetricKey(length int) ([]byte, error) {
 		fmt.Println("Error generating symmetric key:", err)
 		return nil, err
 	}
-	fmt.Println("Symmetric key generated:", key)
+	fmt.Println("Symmetric key generated")
 	return key, nil
 }
 
