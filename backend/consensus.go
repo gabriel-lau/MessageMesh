@@ -205,11 +205,16 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 			}
 			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
 
-		case <-raftInstance.LeaderCh():
-			debug.Log("raft", "Leader changed")
-			debug.Log("raft", fmt.Sprintf("Current Leader: %s", raftInstance.Leader()))
-			if string(raftInstance.Leader()) == network.PubSubService.SelfID().String() {
+		case leader := <-raftInstance.LeaderCh():
+			if leader {
 				debug.Log("raft", "I am the leader")
+				go func() {
+					time.Sleep(10 * time.Second)
+					debug.Log("raft", "Transferring leadership")
+					raftInstance.LeadershipTransfer()
+				}()
+			} else {
+				debug.Log("raft", "I am not the leader")
 			}
 		}
 	}
