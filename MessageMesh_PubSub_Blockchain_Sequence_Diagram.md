@@ -1,0 +1,107 @@
+```mermaid
+sequenceDiagram
+    title MessageMesh Message Publishing, Receiving, and Blockchain Commitment Flow
+
+    %% Participants
+    participant Client
+    participant Network
+    participant PubSubService
+    participant Topic
+    participant Subscription
+    participant ConsensusService
+    participant RaftConsensus
+    participant Blockchain
+
+    %% Message Publishing Flow
+    rect rgb(240, 240, 255)
+    Note over Client,Blockchain: Message Publishing Flow
+    
+    Client->>Network: SendMessage(message, receiver)
+    Network->>Network: Create Message object with sender, receiver, message, timestamp
+    Network->>Network: Marshal Message to JSON
+    Network->>PubSubService: Send MessageEnvelope to Outbound channel
+    
+    %% PubLoop processing
+    PubSubService->>PubSubService: PubLoop receives from Outbound channel
+    PubSubService->>PubSubService: Marshal MessageEnvelope to JSON
+    PubSubService->>Topic: Publish message bytes to topic
+    end
+
+    %% Message Receiving Flow
+    rect rgb(255, 240, 240)
+    Note over Client,Blockchain: Message Receiving Flow
+    
+    Topic-->>Subscription: Message propagates to subscribers
+    Subscription-->>PubSubService: SubLoop receives message from subscription
+    PubSubService->>PubSubService: Check if message is from self
+    PubSubService->>PubSubService: Unmarshal envelope to determine message type
+    
+    alt Message Type = "Message"
+        PubSubService->>PubSubService: Unmarshal into Message struct
+        PubSubService->>PubSubService: Send Message to Inbound channel
+    else Message Type = "FirstMessage"
+        PubSubService->>PubSubService: Unmarshal into FirstMessage struct
+        PubSubService->>PubSubService: Send FirstMessage to Inbound channel
+    else Message Type = "Account"
+        PubSubService->>PubSubService: Unmarshal into Account struct
+        PubSubService->>PubSubService: Send Account to Inbound channel
+    end
+    end
+
+    %% Blockchain Commitment Flow
+    rect rgb(240, 255, 240)
+    Note over Client,Blockchain: Blockchain Commitment Flow
+    
+    %% blockchainLoop processing
+    ConsensusService->>PubSubService: blockchainLoop monitors Inbound channel
+    PubSubService-->>ConsensusService: Receive Message from Inbound channel
+    
+    alt Message Type
+        ConsensusService->>ConsensusService: Call addMessageBlock()
+        ConsensusService->>ConsensusService: Validate message fields
+        
+        alt Is Leader
+            ConsensusService->>ConsensusService: Create raftOP with ADD_MESSAGE_BLOCK type
+            ConsensusService->>RaftConsensus: CommitOp(op)
+            RaftConsensus->>RaftConsensus: Apply operation to state
+            RaftConsensus->>Blockchain: AddMessageBlock(message)
+            Blockchain->>Blockchain: Create new block with message data
+            Blockchain->>Blockchain: Add block to chain
+            Blockchain-->>RaftConsensus: Return updated state
+            RaftConsensus-->>ConsensusService: Operation committed
+        else Not Leader
+            ConsensusService-->>ConsensusService: Skip (only leader can commit)
+        end
+    else FirstMessage Type
+        ConsensusService->>ConsensusService: Call addFirstMessageBlock()
+        ConsensusService->>ConsensusService: Validate firstMessage fields
+        
+        alt Is Leader
+            ConsensusService->>ConsensusService: Create raftOP with ADD_FIRST_MESSAGE_BLOCK type
+            ConsensusService->>RaftConsensus: CommitOp(op)
+            RaftConsensus->>RaftConsensus: Apply operation to state
+            RaftConsensus->>Blockchain: AddFirstMessageBlock(firstMessage)
+            Blockchain->>Blockchain: Create new block with firstMessage data
+            Blockchain->>Blockchain: Add block to chain
+            Blockchain-->>RaftConsensus: Return updated state
+            RaftConsensus-->>ConsensusService: Operation committed
+        else Not Leader
+            ConsensusService-->>ConsensusService: Skip (only leader can commit)
+        end
+    end
+    end
+
+    %% Blockchain Update Notification
+    rect rgb(255, 255, 240)
+    Note over Client,Blockchain: Blockchain Update Notification
+    
+    RaftConsensus-->>ConsensusService: Notify via Subscribe() channel
+    ConsensusService->>RaftConsensus: GetCurrentState()
+    RaftConsensus-->>ConsensusService: Return current blockchain state
+    ConsensusService->>ConsensusService: Get latest block
+    ConsensusService->>ConsensusService: Log block details based on type
+    ConsensusService->>ConsensusService: Send block to LatestBlock channel
+    ConsensusService-->>Network: Block propagated to network
+    Network-->>Client: UI updated with new block data
+    end
+``` 
