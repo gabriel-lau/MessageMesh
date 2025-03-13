@@ -1,0 +1,66 @@
+```mermaid
+classDiagram
+    %% Interface
+    class BlockData {
+        <<interface>>
+        +CalculateDataHash() string
+    }
+
+    %% Main Classes
+    class Block {
+        +int Index
+        +int64 Timestamp
+        +string PrevHash
+        +string Hash
+        +string BlockType
+        +BlockData Data
+        +CalculateHash() string
+    }
+
+    class Blockchain {
+        +Block[] Chain
+        +CreateGenesisBlock() *Block
+        +GetMessageBlock(int) *Block
+        +AddMessageBlock(Message) *Block
+        +GetAccountBlock(int) *Block
+        +AddAccountBlock(Account) *Block
+        +AddFirstMessageBlock(FirstMessage) *Block
+        +GetFirstMessageBlock(int) *Block
+        +GetLatestBlock() *Block
+        +IsValid() bool
+        +CheckPeerFirstMessage([]string) *FirstMessage
+    }
+
+    class Message {
+        +string Sender
+        +string Receiver
+        +string Message
+        +string Timestamp
+    }
+
+    class FirstMessage {
+        +[]string PeerIDs
+        +[]byte SymetricKey0
+        +[]byte SymetricKey1
+        +GetSymetricKey(string) []byte
+    }
+
+    %% Data Classes that implement BlockData
+    class MessageData {
+        +Message Message
+        +CalculateDataHash() string
+    }
+
+    class FirstMessageData {
+        +FirstMessage FirstMessage
+        +CalculateDataHash() string
+    }
+
+    %% Relationships
+    BlockData <|.. MessageData : implements
+    BlockData <|.. FirstMessageData : implements
+    Block o-- BlockData : contains
+    Blockchain o-- Block : contains
+    MessageData *-- Message : contains
+    FirstMessageData *-- FirstMessage : contains
+``` 
