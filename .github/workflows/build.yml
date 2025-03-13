@@ -1,0 +1,79 @@
+name: Build Wails Application
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - name: 'windows'
+            os: 'windows-latest'
+            output: 'MessageMesh.exe'
+          - name: 'linux'
+            os: 'ubuntu-latest'
+            output: 'MessageMesh'
+          - name: 'macos'
+            os: 'macos-latest'
+            output: 'MessageMesh.app'
+    
+    runs-on: ${{ matrix.build.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '9.15.0'
+          run_install: false
+          
+      - name: Install Wails (Windows)
+        if: matrix.build.name == 'windows'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        
+      - name: Install Wails (macOS)
+        if: matrix.build.name == 'macos'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        
+      - name: Install Wails (Linux)
+        if: matrix.build.name == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          pnpm install
+          
+      - name: Build Wails application
+        run: |
+          wails build -platform=${{ matrix.build.name }}
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: MessageMesh-${{ matrix.build.name }}
+          path: build/bin/${{ matrix.build.output }}
