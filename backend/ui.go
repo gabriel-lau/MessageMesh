@@ -52,8 +52,8 @@ func UIDataLoop(network Network, ctx context.Context) {
 			select {
 			case block := <-network.ConsensusService.LatestBlock:
 				debug.Log("ui", "Block: "+block.BlockType)
-			case <-time.After(30 * time.Second):
-				network.SendEncryptedMessage("Its "+time.Now().Format("2006-01-02 15:04:05")+" I am "+debug.Username, "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
+			// case <-time.After(30 * time.Second):
+			// 	network.SendEncryptedMessage("Its "+time.Now().Format("2006-01-02 15:04:05")+" I am "+debug.Username, "Qma9HU4gynWXNzWwpqmHRnLXikstTgCbYHfG6aqJTLrxfq")
 			case <-ctx.Done():
 				return
 			}
