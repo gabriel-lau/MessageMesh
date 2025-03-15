@@ -225,8 +225,6 @@ func blockchainLoop(network *Network, raftInstance *raft.Raft, raftconsensus *li
 		select {
 		// New block added to the blockchain
 		case <-raftconsensus.Subscribe():
-			network.ConsensusService.Connected <- true
-
 			// First time the blockchain is updated
 			newState, _ := raftconsensus.GetCurrentState()
 			blockchain := newState.(*raftState).Blockchain

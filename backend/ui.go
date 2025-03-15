@@ -20,6 +20,7 @@ func UIDataLoop(network Network, ctx context.Context) {
 			case peerIDs := <-network.PubSubService.PeerIDs:
 				runtime.EventsEmit(ctx, "getPeerList", peerIDs)
 				debug.Log("ui", "Peers: "+string(len(peerIDs)))
+				runtime.EventsEmit(ctx, "getConnected", true)
 
 			// repeat this every 10 seconds
 			case <-time.After(10 * time.Second):
