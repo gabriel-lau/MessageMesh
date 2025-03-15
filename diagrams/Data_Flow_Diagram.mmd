@@ -1,0 +1,96 @@
+flowchart TD
+    %% Define node styles
+    classDef userStyle fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef frontendStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef backendStyle fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef networkStyle fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef dataStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef processStyle fill:#fafafa,stroke:#616161,stroke-width:1px,stroke-dasharray: 5 5
+
+    %% User Interaction
+    User((User))
+    
+    %% Frontend Components
+    UI_App[UI App.svelte]
+    UI_Components[UI Components]
+    
+    %% Backend Components
+    App[App]
+    Network[Network Interface]
+    P2P[P2P Service]
+    PubSub[PubSub Service]
+    Keys[Key Management]
+    Consensus[Consensus Service]
+    
+    %% Data Storage
+    Blockchain[(Blockchain)]
+    KeyStore[(Key Store)]
+    
+    %% Network
+    P2P_Network((P2P Network))
+    
+    %% Processes
+    subgraph SendMessage[Send Message Process]
+        direction TB
+        SM1[User composes message]
+        SM2[Message encrypted]
+        SM3[Message published to network]
+        SM4[Message added to blockchain]
+        
+        SM1 --> SM2 --> SM3 --> SM4
+    end
+    
+    subgraph ReceiveMessage[Receive Message Process]
+        direction TB
+        RM1[Message received from network]
+        RM2[Message validated]
+        RM3[Message decrypted]
+        RM4[Message displayed to user]
+        RM5[Message added to blockchain]
+        
+        RM1 --> RM2 --> RM3 --> RM4
+        RM2 --> RM5
+    end
+    
+    subgraph ConsensusProcess[Consensus Process]
+        direction TB
+        CP1[Block proposed]
+        CP2[Raft consensus voting]
+        CP3[Block committed to blockchain]
+        
+        CP1 --> CP2 --> CP3
+    end
+    
+    %% Data Flow
+    User --> UI_App
+    UI_App --> UI_Components
+    UI_Components --> App
+    
+    App --> Network
+    Network --> P2P
+    Network --> PubSub
+    Network --> Keys
+    Network --> Consensus
+    
+    P2P <--> P2P_Network
+    PubSub <--> P2P
+    
+    Keys --> KeyStore
+    Consensus --> Blockchain
+    
+    %% Process Connections
+    UI_App --> SendMessage
+    SendMessage --> PubSub
+    PubSub --> ReceiveMessage
+    ReceiveMessage --> UI_App
+    
+    PubSub --> ConsensusProcess
+    ConsensusProcess --> Blockchain
+    
+    %% Apply styles
+    class User userStyle
+    class UI_App,UI_Components frontendStyle
+    class App,Network,P2P,PubSub,Keys,Consensus backendStyle
+    class P2P_Network networkStyle
+    class Blockchain,KeyStore dataStyle
+    class SendMessage,ReceiveMessage,ConsensusProcess,SM1,SM2,SM3,SM4,RM1,RM2,RM3,RM4,RM5,CP1,CP2,CP3 processStyle
