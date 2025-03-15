@@ -8,6 +8,7 @@
   
   let message = $state('');
   let lastSentTimestamp: number | null = $state(null);
+  let lastSentMessage: string | null = $state(null);
   let messageLatencies: number[] = $state([]);
   let messagesContainer: HTMLDivElement;
   
@@ -26,7 +27,7 @@
   $effect(() => {
     if (messages && lastSentTimestamp) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage && lastMessage.sender === userPeerID) {
+      if (lastMessage && lastMessage.sender === userPeerID && lastMessage.message === lastSentMessage) {
         const latency = Date.now() - lastSentTimestamp;
         messageLatencies.push(latency);
         console.log(`Message latency: ${latency}ms`);
@@ -38,6 +39,7 @@
   function sendMessage(): void {
     if (!selectedPeer) return; // Don't send if no peer is selected
     lastSentTimestamp = Date.now();
+    lastSentMessage = message;
     SendEncryptedMessage(message, selectedPeer);
     message = '';
   }
