@@ -42,3 +42,13 @@ RUN echo "HEADLESS=true" > /app/.env && \
 
 # Run the application
 CMD ["/app/messagemesh"] 
+
+# Build the Docker image
+# docker build -t gabriellh/messagemesh .
+
+# Run the Docker container
+# docker run -d -p 8080:8080 gabriellh/messagemesh
+
+# Push the Docker image to Docker Hub
+# docker push gabriellh/messagemesh:latest
+
