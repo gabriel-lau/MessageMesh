@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+  messagemesh:
+    image: gabriellh/messagemesh:latest
+    container_name: messagemesh
+    restart: unless-stopped
