@@ -189,7 +189,6 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 					debug.Log("err", fmt.Sprintf("Failed to add voter: %s", err))
 				}
 			}
-			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
 
 		case peer := <-network.PubSubService.PeerLeave:
 			debug.Log("raft", fmt.Sprintf("Peer left: %s", peer))
@@ -203,7 +202,6 @@ func networkLoop(network *Network, raftInstance *raft.Raft) {
 					debug.Log("err", fmt.Sprintf("Failed to remove server: %s", err))
 				}
 			}
-			network.PubSubService.PeerIDs <- network.PubSubService.PeerList()
 
 		case leader := <-raftInstance.LeaderCh():
 			if leader {
