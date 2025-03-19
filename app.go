@@ -99,3 +99,7 @@ func (a *App) GetAccounts() []*models.Account {
 	}
 	return accounts
 }
+
+func (a *App) SetTopic(topic string) {
+	//a.network.PubSubService.Topic = topic
+}

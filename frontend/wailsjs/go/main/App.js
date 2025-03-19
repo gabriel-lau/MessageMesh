@@ -37,3 +37,7 @@ export function SendEncryptedMessage(arg1, arg2) {
 export function SendMessage(arg1, arg2) {
   return window['go']['main']['App']['SendMessage'](arg1, arg2);
 }
+
+export function SetTopic(arg1) {
+  return window['go']['main']['App']['SetTopic'](arg1);
+}

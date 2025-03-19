@@ -38,6 +38,8 @@ type P2PService struct {
 }
 
 type PubSubService struct {
+	// Topic
+	Topic string
 	// Listen to new messages
 	Inbound chan any
 	// Send messages

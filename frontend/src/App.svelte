@@ -6,19 +6,25 @@
   import * as Wails from '../wailsjs/runtime/runtime.js';
   import { models } from '../wailsjs/go/models.js';
   import { GetMessagesFromPeer, GetDecryptedMessage } from '../wailsjs/go/main/App.js';
-    import { Spinner } from 'flowbite-svelte';
+    import { Input, Spinner, ToolbarButton } from 'flowbite-svelte';
+    import { PaperPlaneOutline } from 'flowbite-svelte-icons';
 
   let selectedPeer = $state('');
   let userPeerID = $state('');
   let online = $state(false);
-  let peerList = $state<string[]>([]);
+  let peerList = $state<string[]>([]); // All peers
+  let onlinePeerList = $state<string[]>([]); // Peers that are online
   let messages = $state<models.Message[]>([]);
   let accounts = $state<models.Account[]>([]);
   let messageMap = $state(new Map<string, models.Block[]>());
   let accountMap = $state(new Map<string, models.Account>());
+  let topic = $state('');
+  let topicChanged = $state(false);
 
   Wails.EventsOn("getPeerList", (data: string[]) => {
-    peerList = data;
+    onlinePeerList = data;
+    // Append peerList with onlinePeerList and remove duplicates
+    peerList = [...new Set([...peerList, ...onlinePeerList])];
   });
   Wails.EventsOn("getUserPeerID", (data: string) => {
     userPeerID = data;
@@ -110,13 +116,28 @@
 <main>
   <div class="flex w-screen h-screen bg-primary-50 dark:bg-gray-900">
     <!-- If online is false, show a loading screen -->
-    {#if !online}
+    {#if !online && !topicChanged}
+      <div class="flex flex-col items-center justify-center h-full w-full">
+        <div class="text-2xl font-bold">Welcome to MessageMesh</div>
+        <div class="text-sm text-gray-500">Please enter a topic to start chatting</div>
+        <div class="flex flex-row">
+          <Input type="text" bind:value={topic} class="w-full" />
+          <ToolbarButton class="bg-blue-500 text-white p-2 rounded-md" on:click={() => {
+            topicChanged = true;
+          }}>
+            <PaperPlaneOutline class="w-6 h-6 rotate-45" />
+            <span class="sr-only">Join Topic</span>
+          </ToolbarButton>
+        </div>
+      </div>
+    {/if}
+    {#if !online && topicChanged}
       <div class="flex flex-col items-center justify-center h-full w-full">
         <Spinner size={8} />
         <div class="text-2xl font-bold">Connecting to network...</div>
       </div>
     {/if}
-    {#if online}
+    {#if online && topicChanged}
     <NavigationRailComponent bind:peerList bind:online></NavigationRailComponent>
     <div class="flex flex-row w-full">
         <ChatListComponent bind:selectedPeer bind:peerList></ChatListComponent>
