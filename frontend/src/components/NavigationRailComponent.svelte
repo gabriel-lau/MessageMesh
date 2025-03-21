@@ -9,7 +9,7 @@
   import {
     DrawSquareOutline,
   } from 'flowbite-svelte-icons';
-  let { peerList = $bindable<string[]>([]), online = $bindable<boolean>(false) } = $props();
+  let { onlinePeerList = $bindable<string[]>([]), online = $bindable<boolean>(false) } = $props();
 
   let connected: 'Connected' | 'Disconnected' = $state('Disconnected');
   let status: 'green' | 'red' = $state('red');
@@ -30,7 +30,7 @@
   <Sidebar class="w-auto h-full">
     <SidebarWrapper class="h-full rounded-none">
       <SidebarGroup>
-        <SidebarItem label="Connected to {peerList.length} peers" class="flex flex-col" {spanClass} href="#">
+        <SidebarItem label="Connected to {onlinePeerList.length} peers" class="flex flex-col" {spanClass} href="#">
           <svelte:fragment slot="icon">
             <DrawSquareOutline class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
           </svelte:fragment>

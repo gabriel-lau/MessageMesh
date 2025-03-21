@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Input, Textarea, ToolbarButton } from 'flowbite-svelte';
+  import { Input, ToolbarButton } from 'flowbite-svelte';
   import { Navbar, NavBrand } from 'flowbite-svelte';
   import { PaperPlaneOutline } from 'flowbite-svelte-icons';
   import { SendEncryptedMessage } from '../../wailsjs/go/main/App.js';

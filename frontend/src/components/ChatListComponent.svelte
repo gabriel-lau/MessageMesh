@@ -1,8 +1,12 @@
 <script lang="ts">
   import { Listgroup, ListgroupItem, Badge, Indicator } from 'flowbite-svelte';
-  let { selectedPeer = $bindable<string>(), peerList = $bindable<string[]>([]) } = $props();
+  let { selectedPeer = $bindable<string>(), peerList = $bindable<string[]>([]), onlinePeerList = $bindable<string[]>([]) } = $props();
   function selectPeer(peer: string) {
     selectedPeer = peer;
+  }
+
+  function isOnline(peer: string) {
+    return onlinePeerList.includes(peer);
   }
 
 </script>
@@ -21,9 +25,15 @@
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-gray-900 truncate dark:text-white">{peer}</p>
           </div>
-          <Badge color="green" rounded class="px-2.5 py-0.5">
-            <Indicator color="green" size="xs" class="me-1" />Available
-          </Badge>
+          {#if isOnline(peer)}
+            <Badge color="green" rounded class="px-2.5 py-0.5">
+              <Indicator color="green" size="xs" class="me-1" />Available
+            </Badge>
+          {:else if !isOnline(peer)}
+            <Badge color="red" rounded class="px-2.5 py-0.5">
+              <Indicator color="red" size="xs" class="me-1" />Offline
+            </Badge>
+          {/if}
         </div>
       </ListgroupItem>
     {/each}

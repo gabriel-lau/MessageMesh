@@ -22,8 +22,7 @@
   let topicChanged = $state(false);
 
   Wails.EventsOn("getPeerList", (data: string[]) => {
-    onlinePeerList = data;
-    // Append peerList with onlinePeerList and remove duplicates
+    onlinePeerList = data ?? [];
     peerList = [...new Set([...peerList, ...onlinePeerList])];
   });
   Wails.EventsOn("getUserPeerID", (data: string) => {
@@ -138,9 +137,9 @@
       </div>
     {/if}
     {#if online && topicChanged}
-    <NavigationRailComponent bind:peerList bind:online></NavigationRailComponent>
+    <NavigationRailComponent bind:onlinePeerList bind:online></NavigationRailComponent>
     <div class="flex flex-row w-full">
-        <ChatListComponent bind:selectedPeer bind:peerList></ChatListComponent>
+        <ChatListComponent bind:selectedPeer bind:peerList bind:onlinePeerList></ChatListComponent>
         <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
       </div>
     {/if}
