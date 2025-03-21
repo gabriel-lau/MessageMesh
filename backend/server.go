@@ -169,6 +169,23 @@ func (network *Network) DecryptMessage(message string, peerIDs []string) (string
 				debug.Log("server", fmt.Sprintf("Error decrypting symmetric key for %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
 			}
 			debug.Log("server", fmt.Sprintf("Decrypted symmetric key for %s and %s", peerIDs[0], peerIDs[1]))
+
+			// Verify the signature of the symmetric key
+			pubKey, err := GetPeerPublicKey(network.P2pService, firstMessage.Signer)
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error getting peer public key for %s: %s", firstMessage.Signer, err.Error()))
+				// return "", err
+			}
+			verified, err := VerifySignature(symmetricKey, firstMessage.Signature, pubKey)
+			if err != nil {
+				debug.Log("server", fmt.Sprintf("Error verifying signature for %s and %s: %s", peerIDs[0], peerIDs[1], err.Error()))
+				// return "", err
+			}
+			if !verified {
+				debug.Log("server", fmt.Sprintf("Signature verification failed for %s and %s", peerIDs[0], peerIDs[1]))
+				// return "", fmt.Errorf("signature verification failed for %s and %s", peerIDs[0], peerIDs[1])
+			}
+
 			err = SaveSymmetricKey(symmetricKey, peerIDs)
 			if err != nil {
 				debug.Log("server", fmt.Sprintf("Error saving symmetric key: %s", err.Error()))
@@ -247,11 +264,26 @@ func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (mod
 	}
 	debug.Log("server", fmt.Sprintf("Encrypted symmetric key for %s", peerID1))
 
+	// Sign the symmetric key with my private key
+	keyPair, err := ReadKeyPair()
+	if err != nil {
+		debug.Log("server", fmt.Sprintf("Error reading key pair: %s", err.Error()))
+		return models.FirstMessage{}, err
+	}
+	signature, err := keyPair.SignWithPrivateKey(symmetricKey)
+	if err != nil {
+		debug.Log("server", fmt.Sprintf("Error signing symmetric key: %s", err.Error()))
+		return models.FirstMessage{}, err
+	}
+	debug.Log("server", fmt.Sprintf("Signed symmetric key for %s", network.PubSubService.SelfID().String()))
+
 	// Create the first message
 	firstMessage := models.FirstMessage{
 		PeerIDs:      peerIDs,
 		SymetricKey0: encryptedSymmetricKey0,
 		SymetricKey1: encryptedSymmetricKey1,
+		Signature:    signature,
+		Signer:       network.PubSubService.SelfID().String(),
 	}
 
 	// Marshal firstMessage to JSON first
