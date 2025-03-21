@@ -5,21 +5,22 @@
     SidebarItem,
     SidebarWrapper,
     Indicator,
+    Tooltip,
   } from 'flowbite-svelte';
   import {
     DrawSquareOutline,
   } from 'flowbite-svelte-icons';
-  let { onlinePeerList = $bindable<string[]>([]), online = $bindable<boolean>(false) } = $props();
+  let { onlinePeerList = $bindable<string[]>([]), online = $bindable<boolean>(false), userPeerID = $bindable<string>() } = $props();
 
-  let connected: 'Connected' | 'Disconnected' = $state('Disconnected');
+  let connected: 'Online' | 'Offline' = $state('Offline');
   let status: 'green' | 'red' = $state('red');
   $effect(() => {
     if (online) {
       status = 'green';
-      connected = 'Connected';
+      connected = 'Online';
     } else {
       status = 'red';
-      connected = 'Disconnected';
+      connected = 'Offline';
     }
   });
 
@@ -41,6 +42,9 @@
             <Indicator class="m-2" color={status} />
           </svelte:fragment>
         </SidebarItem>
+        <Tooltip placement='right'>
+          {userPeerID}
+        </Tooltip>
       </SidebarGroup>
     </SidebarWrapper>
   </Sidebar>

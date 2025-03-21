@@ -137,7 +137,7 @@
       </div>
     {/if}
     {#if online && topicChanged}
-    <NavigationRailComponent bind:onlinePeerList bind:online></NavigationRailComponent>
+    <NavigationRailComponent bind:onlinePeerList bind:online bind:userPeerID></NavigationRailComponent>
     <div class="flex flex-row w-full">
         <ChatListComponent bind:selectedPeer bind:peerList bind:onlinePeerList></ChatListComponent>
         <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
