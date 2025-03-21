@@ -192,6 +192,15 @@ func (keypair *KeyPair) VerifyWithPublicKey(plaintext []byte, sig []byte) (bool,
 	return verification, nil
 }
 
+func VerifySignature(plaintext []byte, sig []byte, pubKey libp2pcrypto.PubKey) (bool, error) {
+	verification, err := pubKey.Verify(plaintext, sig)
+	if err != nil {
+		fmt.Println("Error verifying signature:", err)
+		return false, err
+	}
+	return verification, nil
+}
+
 func (keypair *KeyPair) EncryptWithPublicKey(plaintext []byte) ([]byte, error) {
 	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, keypair.PublicKey.(*rsa.PublicKey), plaintext)
 	if err != nil {
