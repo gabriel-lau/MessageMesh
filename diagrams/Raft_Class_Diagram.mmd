@@ -1,0 +1,13 @@
+classDiagram
+    class raftState {
+        +Blockchain Blockchain
+    }
+
+    class raftOP {
+        +String Type
+        +Message* Message
+        +FirstMessage* FirstMessage
+        +ApplyTo(state: consensus.State) (consensus.State, error)
+    }
+
+    raftOP ..> raftState : modifies

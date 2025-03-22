@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant Client
+    participant PubSubService
+    participant BlockchainLoop
+    participant RaftConsensus
+    participant RaftOP
+    participant Blockchain
+
+    alt Message Block Flow
+        Client->>PubSubService: Send Message
+        PubSubService->>BlockchainLoop: Message via Inbound channel
+        Note over BlockchainLoop: Check if node is leader
+        BlockchainLoop->>RaftConsensus: CommitOp(ADD_MESSAGE_BLOCK)
+        RaftConsensus->>RaftOP: ApplyTo(state)
+        Note over RaftOP: Validate message:<br/>- Check sender not empty<br/>- Check receiver not empty<br/>- Check message not empty<br/>- Check sender != receiver
+        RaftOP->>Blockchain: AddMessageBlock()
+        Blockchain-->>RaftOP: Return new block
+        RaftOP-->>RaftConsensus: Return updated state
+        RaftConsensus-->>BlockchainLoop: Notify via Subscribe channel
+        BlockchainLoop->>PubSubService: Broadcast updated blockchain
+    else First Message Block Flow
+        Client->>PubSubService: Send FirstMessage
+        PubSubService->>BlockchainLoop: FirstMessage via Inbound channel
+        Note over BlockchainLoop: Check if node is leader<br/>Sort PeerIDs<br/>Check for duplicates
+        BlockchainLoop->>RaftConsensus: CommitOp(ADD_FIRST_MESSAGE_BLOCK)
+        RaftConsensus->>RaftOP: ApplyTo(state)
+        Note over RaftOP: Validate first message:<br/>- Check exactly 2 peer IDs<br/>- Check peer IDs not empty<br/>- Check peer IDs not same<br/>- Check symmetric keys not empty
+        RaftOP->>Blockchain: AddFirstMessageBlock()
+        Blockchain-->>RaftOP: Return new block
+        RaftOP-->>RaftConsensus: Return updated state
+        RaftConsensus-->>BlockchainLoop: Notify via Subscribe channel
+        BlockchainLoop->>PubSubService: Broadcast updated blockchain
+    end

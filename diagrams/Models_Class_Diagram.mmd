@@ -21,12 +21,9 @@ classDiagram
         +CreateGenesisBlock() *Block
         +GetMessageBlock(int) *Block
         +AddMessageBlock(Message) *Block
-        +GetAccountBlock(int) *Block
-        +AddAccountBlock(Account) *Block
         +AddFirstMessageBlock(FirstMessage) *Block
         +GetFirstMessageBlock(int) *Block
         +GetLatestBlock() *Block
-        +IsValid() bool
         +CheckPeerFirstMessage([]string) *FirstMessage
     }
 

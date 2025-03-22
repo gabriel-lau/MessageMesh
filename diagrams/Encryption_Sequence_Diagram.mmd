@@ -38,8 +38,10 @@ sequenceDiagram
             SendFirstMessage->>SendFirstMessage: Check if receiver is online
             SendFirstMessage->>SendFirstMessage: GenerateSymmetricKey(32)
             SendFirstMessage->>SendFirstMessage: SaveSymmetricKey(symmetricKey, peerIDs)
+            SendFirstMessage->>KeyPair: SignWithPrivateKey(symmetricKey)
+            KeyPair-->>SendFirstMessage: Return signature
             SendFirstMessage->>SendFirstMessage: Encrypt symmetricKey for both peers
-            SendFirstMessage->>SendFirstMessage: Create FirstMessage object
+            SendFirstMessage->>SendFirstMessage: Create FirstMessage object with signature
             SendFirstMessage->>SendFirstMessage: Send FirstMessage via PubSub
             
             SendFirstMessage-->>Network: Return firstMessage
@@ -75,6 +77,8 @@ sequenceDiagram
             KeyPair-->>Network: Return keyPair
             Network->>KeyPair: DecryptWithPrivateKey(firstMessage.GetSymetricKey(selfID))
             KeyPair-->>Network: Return decrypted symmetricKey
+            Network->>Network: GetPeerPublicKey(firstMessage.Signer)
+            Network->>Network: VerifySignature(symmetricKey, firstMessage.Signature, pubKey)
             Network->>Network: SaveSymmetricKey(symmetricKey, peerIDs)
         else First message not found
             Blockchain-->>Network: Return nil
