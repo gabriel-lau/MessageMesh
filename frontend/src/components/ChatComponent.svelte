@@ -38,6 +38,7 @@
 
   function sendMessage(): void {
     if (!selectedPeer) return; // Don't send if no peer is selected
+    if (message === '') return;
     lastSentTimestamp = Date.now();
     lastSentMessage = message;
     SendEncryptedMessage(message, selectedPeer);
