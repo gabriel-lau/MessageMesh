@@ -122,9 +122,9 @@
         <div class="flex flex-row">
           <Input type="text" bind:value={topic} class="w-full" />
           <ToolbarButton class="bg-blue-500 text-white p-2 rounded-md" on:click={() => {
-            topicChanged = true;
-            if (topic === "Online") {
-              online = true;
+            if (topic !== "") {
+              topicChanged = true;
+              Wails.EventsEmit("joinTopic", topic);
             }
           }}>
             <PaperPlaneOutline class="w-6 h-6 rotate-45" />
