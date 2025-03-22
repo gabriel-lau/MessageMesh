@@ -1,0 +1,41 @@
+classDiagram
+    class Network {
+        +P2PService *P2PService
+        +PubSubService *PubSubService
+        +ConsensusService *ConsensusService
+    }
+
+    class P2PService {
+        +Ctx context.Context
+        +Host host.Host
+        +KadDHT *dht.IpfsDHT
+        +Discovery *discovery.RoutingDiscovery
+        +PubSub *pubsub.PubSub
+    }
+
+    class PubSubService {
+        +Topic string
+        +Inbound chan any
+        +Outbound chan any
+        +PeerJoin chan peer.ID
+        +PeerLeave chan peer.ID
+        +PeerIDs chan []peer.ID
+        -selfid peer.ID
+        -psctx context.Context
+        -pscancel context.CancelFunc
+        -pstopic *pubsub.Topic
+        -psub *pubsub.Subscription
+    }
+
+    class ConsensusService {
+        +LatestBlock chan models.Block
+        +Blockchain *models.Blockchain
+        +Connected chan bool
+        +Raft *raft.Raft
+        +Actor *libp2praft.Actor
+        +Consensus *libp2praft.Consensus
+    }
+
+    Network *-- P2PService : contains
+    Network *-- PubSubService : contains
+    Network *-- ConsensusService : contains
