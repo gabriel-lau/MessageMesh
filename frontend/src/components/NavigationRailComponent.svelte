@@ -10,7 +10,7 @@
   import {
     DrawSquareOutline,
   } from 'flowbite-svelte-icons';
-  let { onlinePeerList = $bindable<string[]>([]), online = $bindable<boolean>(false), userPeerID = $bindable<string>() } = $props();
+  let { onlinePeerList = $bindable<string[]>([]), online = $bindable<boolean>(false), userPeerID = $bindable<string>(), topic = $bindable<string>() } = $props();
 
   let connected: 'Online' | 'Offline' = $state('Offline');
   let status: 'green' | 'red' = $state('red');
@@ -43,7 +43,9 @@
           </svelte:fragment>
         </SidebarItem>
         <Tooltip placement='right'>
-          {userPeerID}
+          Peer ID: {userPeerID}
+          <br>
+          Topic: {topic}
         </Tooltip>
       </SidebarGroup>
     </SidebarWrapper>

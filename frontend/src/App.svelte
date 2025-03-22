@@ -123,6 +123,9 @@
           <Input type="text" bind:value={topic} class="w-full" />
           <ToolbarButton class="bg-blue-500 text-white p-2 rounded-md" on:click={() => {
             topicChanged = true;
+            if (topic === "Online") {
+              online = true;
+            }
           }}>
             <PaperPlaneOutline class="w-6 h-6 rotate-45" />
             <span class="sr-only">Join Topic</span>
@@ -137,8 +140,8 @@
       </div>
     {/if}
     {#if online && topicChanged}
-    <NavigationRailComponent bind:onlinePeerList bind:online bind:userPeerID></NavigationRailComponent>
-    <div class="flex flex-row w-full">
+    <NavigationRailComponent bind:onlinePeerList bind:online bind:userPeerID bind:topic></NavigationRailComponent>
+      <div class="flex flex-row w-full">
         <ChatListComponent bind:selectedPeer bind:peerList bind:onlinePeerList></ChatListComponent>
         <ChatComponent bind:userPeerID bind:selectedPeer bind:messages></ChatComponent>
       </div>
