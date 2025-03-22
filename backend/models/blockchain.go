@@ -172,6 +172,11 @@ func (bc *Blockchain) CheckPeerFirstMessage(peerIDs []string) *FirstMessage {
 		if block.BlockType == "firstMessage" {
 			sort.Strings(peerIDs)
 			if block.Data.(*FirstMessageData).PeerIDs[0] == peerIDs[0] && block.Data.(*FirstMessageData).PeerIDs[1] == peerIDs[1] {
+				// Check if the first message is expired
+				if block.Data.(*FirstMessageData).Expiry < time.Now().Unix() {
+					debug.Log("blockchain", fmt.Sprintf("First message expired for %s and %s", peerIDs[0], peerIDs[1]))
+					continue
+				}
 				debug.Log("blockchain", fmt.Sprintf("First message found for %s and %s", peerIDs[0], peerIDs[1]))
 				return &block.Data.(*FirstMessageData).FirstMessage
 			}

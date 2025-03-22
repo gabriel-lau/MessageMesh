@@ -277,6 +277,10 @@ func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (mod
 	}
 	debug.Log("server", fmt.Sprintf("Signed symmetric key for %s", network.PubSubService.SelfID().String()))
 
+	// Set the expiry time to 90 days from now
+	expiry := time.Now().Add(time.Hour * 24 * 90).Unix()
+	debug.Log("server", fmt.Sprintf("First message expiry: %d", expiry))
+
 	// Create the first message
 	firstMessage := models.FirstMessage{
 		PeerIDs:      peerIDs,
@@ -284,6 +288,7 @@ func (network *Network) SendFirstMessage(peerIDs []string, receiver string) (mod
 		SymetricKey1: encryptedSymmetricKey1,
 		Signature:    signature,
 		Signer:       network.PubSubService.SelfID().String(),
+		Expiry:       expiry,
 	}
 
 	// Marshal firstMessage to JSON first

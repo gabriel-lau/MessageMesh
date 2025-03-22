@@ -6,6 +6,7 @@ type FirstMessage struct {
 	SymetricKey1 []byte   `json:"symetricKey2"` // Symmetric key for peer[1] (Encrypted with peer[0]'s public key)
 	Signature    []byte   `json:"signature"`    // Signature of the key
 	Signer       string   `json:"signer"`       // Signer of the signature
+	Expiry       int64    `json:"expiry"`       // Expiry time of the message
 }
 
 func (fm *FirstMessage) GetSymetricKey(peerID string) []byte {
