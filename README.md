@@ -41,7 +41,7 @@ MessageMesh/
 │   ├── p2p.go               # Peer-to-peer networking
 │   ├── pubSub.go            # Publish-subscribe functionality
 │   └── server.go            # Backend server functionality
-├── db/                      # Database-related code
+├── db/                      # Database-related files$$
 ├── frontend/                # Svelte/TypeScript frontend
 │   ├── dist/                # Compiled frontend assets
 │   ├── src/                 # Source code
@@ -59,10 +59,9 @@ MessageMesh/
 
 - [Go](https://golang.org/dl/) (version 1.18 or later)
 - [Node.js](https://nodejs.org/) (version 16 or later)
-- [pnpm](https://pnpm.io/) (version 9 or later)
 - [Wails CLI](https://wails.io/docs/gettingstarted/installation)
 
-### Installation (Work in Progress) (Wails Installation)
+### Installation
 
 1. Clone the repository:
    ```bash
@@ -73,13 +72,6 @@ MessageMesh/
 2. Install the Go dependencies:
    ```bash
    go mod download
-   ```
-
-3. Install the frontend dependencies:
-   ```bash
-   cd frontend
-   pnpm install
-   cd ..
    ```
 
 ## Running the Project
@@ -113,12 +105,18 @@ wails build
 
 The compiled binaries will be available in the `build/bin` directory.
 
-## Usage (Work in Progress) (Screenshots)
 
-1. **Starting the Application**: Launch the application from the executable or using `wails dev`
-2. **Connecting to Peers**: The application will automatically discover and connect to peers on the same network
-3. **Sending Messages**: Select a peer from the list and compose your message
-4. **Viewing Messages**: All messages are displayed in the conversation view and stored in the local blockchain
+### Start Screen
+
+![Start Screen](screenshots/start.png)
+
+When you start the application, a new user is created instantly and you are prompted to enter the pubsub topic you want to join.
+
+### Chat Screen
+
+![Chat Screen](screenshots/chat.png)
+
+When you join a topic, you can start sending messages to users in the topic.
 
 ## License
 
