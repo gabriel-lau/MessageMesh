@@ -1,5 +1,3 @@
-# ⚠️⚠️ WORK IN PROGRESS ⚠️⚠️
-
 # MessageMesh
 
 A decentralized, peer-to-peer messaging application built with Wails, Go, Svelte, and TypeScript. MessageMesh uses a Raft consensus algorithm to maintain a consistent state between all nodes in the network, ensuring secure and reliable communication.
